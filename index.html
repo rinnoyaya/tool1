@@ -59,7 +59,6 @@
     #translation{width:100%;min-height:150px;border:1px solid #d3d9e0;border-radius:12px;padding:12px;line-height:1.6;resize:vertical;outline:none;background:#fff}#translation:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px #dce9f5}
     .t-status{font-size:.86rem;margin:8px 0 0;line-height:1.55}.t-status.ok{color:var(--ok)}.t-status.warn{color:#9a6a1f}
     .lang-switch{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:.88rem;color:var(--sub);font-weight:700}.lang-switch button{border:1px solid #cfd8e1;background:#fff;border-radius:999px;padding:6px 14px;font-weight:700;color:var(--sub);min-height:38px}.lang-switch button.on{background:var(--brand);border-color:var(--brand);color:#fff}
-    .checks{border:1px solid #f0d9a8;background:#fffaf0;border-radius:14px;padding:14px 16px;margin:0 0 16px}.checks h2{margin:0 0 4px;font-size:1rem;color:#7a5512}.checks>p{margin:0 0 10px;color:#8a6a2f;font-size:.84rem;line-height:1.5}.checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}.checks li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;font-size:.9rem;line-height:1.55;color:#4d3a12}.checks li .acts{display:flex;gap:6px;flex:none}.checks li .ignore{border-color:transparent;background:none;color:#9a7a3f;font-weight:600;padding:6px 8px}.checks li button{flex:none;border:1px solid #e2c48a;background:#fff;color:#7a5512;border-radius:10px;padding:6px 12px;font-weight:700;font-size:.84rem;min-height:36px}
     .ai-links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.ai-links a{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid #cfd8e1;border-radius:12px;background:#fff;padding:10px 6px;text-decoration:none;color:var(--brand);font-weight:800;font-size:.92rem}.ai-links a:hover{background:#f3f7fb}.ai-links a span{font-weight:500;color:var(--sub);font-size:.74rem}
     .big-copy{width:100%;margin-top:14px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:1.05rem;padding:15px}.big-copy:hover{background:var(--brand-2)}
     .send-title{margin:26px 0 4px;font-size:1.05rem}.send-sub{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.send-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.send{border:1px solid #cfd8e1;border-radius:14px;background:#fff;padding:14px;text-align:left;display:flex;flex-direction:column;gap:5px;min-height:92px}.send:hover{background:#f3f7fb;border-color:var(--brand-2)}.send:disabled{opacity:.6;cursor:wait}.send b{color:var(--brand);font-size:1rem}.send span{color:var(--sub);font-size:.8rem;line-height:1.45}
@@ -144,12 +143,12 @@
 
       <section class="step" data-step="5" data-title="完成" hidden>
         <div class="step-head"><span class="step-no">STEP 5 / 5</span><h1>完成！傳給繪師吧</h1><p>確認內容後，選一種方式傳給繪師。要修改可以點上方的步驟。</p></div>
-        <div class="checks" id="checks" hidden><h2>傳送前看一下</h2><p>這些地方繪師可能會誤會，建議先修改（不改也可以傳送）。</p><ul id="checkList"></ul><input type="hidden" id="ignoredChecks"></div>
         <details class="translate" id="translatePanel"><summary>委託外國繪師？用 AI 翻譯成其他語言<span>選填</span></summary>
           <ol class="t-steps">
             <li><b>選語言，複製翻譯指令</b>
               <div class="t-row"><select id="targetLang" aria-label="要翻譯成的語言"><option value="ja">日文</option><option value="en">英文</option><option value="ko">韓文</option><option value="zh-CN">簡體中文</option><option value="fr">法文</option><option value="de">德文</option><option value="es">西班牙文</option><option value="th">泰文</option></select><button type="button" class="ghost" id="copyPrompt">複製翻譯指令</button></div>
-              <p class="t-tip">指令裡已經寫好翻譯規則（保留格式、語氣禮貌、名字不亂翻），直接貼給 AI 就好。</p></li>
+              <p class="t-tip">指令裡已經寫好翻譯規則（保留格式、語氣禮貌、名字不亂翻），直接貼給 AI 就好。</p>
+              <p class="t-tip">小提醒：外國繪師看不到你的語境，金額記得寫幣別、尺寸寫清楚寬和高、左右寫明是以畫面還是角色本人為準；角色的「更多」裡可以填名字的外文拼法。</p></li>
             <li><b>貼到任一個 AI，送出</b>
               <div class="ai-links"><a href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT<span>OpenAI</span></a><a href="https://gemini.google.com/" target="_blank" rel="noopener">Gemini<span>Google</span></a><a href="https://claude.ai/" target="_blank" rel="noopener">Claude<span>Anthropic</span></a></div>
               <p class="t-tip">三個都有免費方案（每天有使用次數限制），翻譯品質比一般翻譯網站好。AI 回覆後，按翻譯結果旁的「複製」按鈕。</p></li>
@@ -207,7 +206,7 @@
     <div class="field full"><label>設定圖 <span class="hint">可選多張</span></label><div class="upload"><div class="image-list"></div><input class="image-input" type="file" accept="image/*" multiple hidden aria-label="加入角色設定圖"><div class="upload-note">可一次選多張。電腦可以把圖片拖進來，或直接貼上（Ctrl+V）。</div></div></div>
     <details class="more"><summary>更多：個性、外文拼法、參考連結</summary><div class="grid">
       <div class="field full"><label>個性與想呈現的感覺</label><textarea data-key="personality" placeholder="例：好奇心旺盛，笑起來很有活力"></textarea></div>
-      <div class="field full"><label>名字的外文拼法 <span class="hint">委託外國繪師時填寫</span></label><input data-key="romaji" placeholder="例：Eleonoa"></div>
+      <div class="field full"><label>名字的外文拼法 <span class="hint">委託外國繪師時填寫</span></label><input data-key="romaji" placeholder="例：Lumi"></div>
       <div class="field full"><label>參考圖連結或說明</label><input data-key="reference" placeholder="例：設定圖連結"></div>
     </div></details>
   </div></div></template>
@@ -232,8 +231,7 @@
         step=Math.min(LAST,Math.max(1,n));
         sections.forEach((s,i)=>{s.hidden=i+1!==step});
         prevBtn.hidden=step===1;
-        if(step===LAST)returnToEnd=false;
-        nextBtn.textContent=step===LAST?'複製訊息':returnToEnd?'改好了，回到第 5 步':`下一步：${sections[step].dataset.title}`;
+        nextBtn.textContent=step===LAST?'複製訊息':`下一步：${sections[step].dataset.title}`;
         if(step===LAST){render();feedback.textContent=''}
         updateSteps();
         try{localStorage.setItem(STEP_KEY,String(step))}catch{}
@@ -242,8 +240,7 @@
       }
       stepsEl.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(Number(b.dataset.go))});
       prevBtn.addEventListener('click',()=>go(step-1));
-      let returnToEnd=false;
-      nextBtn.addEventListener('click',async()=>{if(step<LAST){go(returnToEnd?LAST:step+1);return}const msg=await copyMessage();feedback.textContent=msg;showToast(msg)});
+      nextBtn.addEventListener('click',async()=>{if(step<LAST){go(step+1);return}const msg=await copyMessage();feedback.textContent=msg;showToast(msg)});
       form.addEventListener('submit',e=>e.preventDefault());
       // 在第 1～4 步時，上傳圖片等提示改用浮動訊息顯示
       new MutationObserver(()=>{if(step!==LAST&&feedback.textContent.trim())showToast(feedback.textContent)}).observe(feedback,{childList:true,characterData:true,subtree:true});
@@ -311,39 +308,6 @@
         tStatus.textContent=msg;tStatus.className='t-status '+cls;
         if(!t||!useT)active={text:latest,data:{...latestData,docTitle:DOC_TITLE,credit:'畫委託需求整理所',lang:'zh'}};
       }
-      /* ---------- 傳送前檢查：根據實際委託常見的誤會 ---------- */
-      // 每項提醒有自己的 key（含目前內容），按「忽略」後只要內容不變就不再出現
-      const OK_LR=/畫面|觀看|看圖|視角|本人|自己的|角色的[左右]|正面|為準|為主/;
-      function findChecks(){
-        const list=[], val=id=>document.getElementById(id).value.trim(), el=id=>document.getElementById(id);
-        const foreign=Boolean(tInput.value.trim())||document.getElementById('translatePanel').open;
-        if(val('budget')&&!/[^\d\s,.\-~～]/.test(val('budget')))list.push({key:'budget:'+val('budget'),text:`預算只寫了「${val('budget')}」，沒有幣別。${foreign?'外國繪師會以為是他們國家的貨幣。':'建議寫上幣別，例如「新臺幣 3,000 元」。'}`,step:1,el:el('budget')});
-        if(/背景/.test(val('workType'))&&!/無背景|不含背景|不要背景|去背/.test(val('workType'))&&/透明|去背/.test(val('format'))&&!/另附|另外|兩種|兩個版本|兩版|各一|也要|和.*背景/.test(val('format')))list.push({key:'bg:'+val('workType')+'|'+val('format'),text:'委託類型寫了「含背景」，檔案格式卻寫「透明背景」，繪師會不知道要不要畫背景。如果兩種都要，請把檔案格式寫成「PNG，另附一張去背版本」。',step:4,el:el('format')});
-        const lr=[];
-        [...container.children].forEach((card,i)=>{const e=card.querySelector('[data-key="appearance"]');if(/[左右]/.test(e.value)&&!OK_LR.test(e.value))lr.push({el:e,step:2,where:`角色 ${i+1} 的外觀`})});
-        [['scene',3,'情境與構圖'],['interaction',3,'姿勢、表情與互動'],['must',4,'一定要保留的重點'],['avoid',4,'希望避免的畫法']].forEach(([id,st,where])=>{const e=el(id);if(/[左右]/.test(e.value)&&!OK_LR.test(e.value))lr.push({el:e,step:st,where})});
-        lr.forEach(x=>list.push({key:'lr:'+x.where+':'+x.el.value,text:`「${x.where}」寫到左右，建議加上「以畫面（看圖的人）為準」或「以角色本人為準」，避免畫反。`,step:x.step,el:x.el}));
-        if(/\d+\s*[*xX×＊]\s*\d+/.test(val('size'))&&!/寬|高|橫|直|長邊|短邊/.test(val('size')))list.push({key:'size:'+val('size'),text:`尺寸「${val('size')}」建議寫成「寬 ○ × 高 ○ px」，避免寬高被看反。`,step:4,el:el('size')});
-        if(foreign&&el('targetLang').value!=='zh-CN')[...container.children].forEach(c=>{const name=c.querySelector('[data-key="name"]').value.trim();if(/[一-鿿]/.test(name)&&!c.querySelector('[data-key="romaji"]').value.trim())list.push({key:'romaji:'+name,text:`「${name}」是中文名字，外國繪師可能念不出來。建議在這位角色的「更多」裡填上外文拼法。`,step:2,el:c.querySelector('[data-key="romaji"]')})});
-        const ignored=new Set(el('ignoredChecks').value.split('\n').filter(Boolean));
-        return list.filter(c=>!ignored.has(c.key));
-      }
-      let lastCheckKeys=null;
-      function showChecks(){
-        const box=document.getElementById('checks'), ul=document.getElementById('checkList'), list=latestData.sections.length?findChecks():[];
-        const keys=new Set(list.map(c=>c.key));
-        if(lastCheckKeys&&step===LAST){const solved=[...lastCheckKeys].filter(k=>!keys.has(k)&&!document.getElementById('ignoredChecks').value.split('\n').includes(k)).length;if(solved)showToast(`✓ 已解決 ${solved} 項提醒`)}
-        lastCheckKeys=keys;
-        box.hidden=!list.length;
-        ul.replaceChildren(...list.map(c=>{
-          const li=document.createElement('li'), span=document.createElement('span'), acts=document.createElement('span'); acts.className='acts';
-          span.textContent=c.text;
-          const fix=document.createElement('button'); fix.type='button'; fix.textContent='去修改';
-          fix.addEventListener('click',()=>{returnToEnd=true;go(c.step,false);const d=c.el.closest('details');if(d)d.open=true;setTimeout(()=>{c.el.scrollIntoView({behavior:'smooth',block:'center'});c.el.focus({preventScroll:true})},60)});
-          const skip=document.createElement('button'); skip.type='button'; skip.className='ignore'; skip.textContent='忽略';
-          skip.addEventListener('click',()=>{const f=document.getElementById('ignoredChecks');f.value=[...f.value.split('\n').filter(Boolean),c.key].join('\n');fireInput();showToast('已忽略這項提醒')});
-          acts.append(fix,skip); li.append(span,acts); return li}));
-      }
       function render(){
         latestData=collect();
         const {greeting,sections:secs,closing}=latestData;
@@ -352,7 +316,6 @@
         form.querySelectorAll('details.more:not([open])').forEach(d=>{if([...d.querySelectorAll('input,textarea')].some(x=>x.value.trim()))d.open=true});
         if(tInput.value.trim())document.getElementById('translatePanel').open=true;
         preview.textContent=active.text||'還沒有填寫內容。可以點上方的步驟回去填寫。';preview.classList.toggle('placeholder',!active.text);
-        if(step===LAST)showChecks();
         updateSteps();syncChips();
       }
       const fireInput=()=>form.dispatchEvent(new Event('input',{bubbles:true}));
@@ -374,7 +337,6 @@
 =====
 ${sourceText}
 =====`}
-      document.getElementById('translatePanel').addEventListener('toggle',()=>{if(step===LAST)showChecks()});
       document.getElementById('copyPrompt').addEventListener('click',async()=>{render();if(!sourceText){showToast('請先填寫至少一項需求。');return}markSource();showToast(await writeClipboard(aiPrompt())?'已複製翻譯指令，請貼到 AI 並送出。':'複製失敗，請再試一次。')});
       document.getElementById('pasteTranslation').addEventListener('click',async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim()){showToast('剪貼簿是空的，請先複製翻譯結果。');return}tInput.value=t;tInput.dispatchEvent(new Event('input',{bubbles:true}))}catch{tInput.focus();showToast('請在框內長按（或按 Ctrl+V）貼上。')}});
       document.getElementById('clearTranslation').addEventListener('click',()=>{if(tInput.value.trim()&&!confirm('要清除翻譯內容嗎？'))return;tInput.value='';outputLang.value='';tSource.value='';fireInput()});
@@ -409,7 +371,7 @@ ${sourceText}
       if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},romaji:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117f" defer></script>
-  <script src="./draft.js?v=20261117g" defer></script>
+  <script src="./export.js?v=20261117h" defer></script>
+  <script src="./draft.js?v=20261117h" defer></script>
 </body>
 </html>
