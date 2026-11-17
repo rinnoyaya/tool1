@@ -59,7 +59,7 @@
     #translation{width:100%;min-height:150px;border:1px solid #d3d9e0;border-radius:12px;padding:12px;line-height:1.6;resize:vertical;outline:none;background:#fff}#translation:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px #dce9f5}
     .t-status{font-size:.86rem;margin:8px 0 0;line-height:1.55}.t-status.ok{color:var(--ok)}.t-status.warn{color:#9a6a1f}
     .lang-switch{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:.88rem;color:var(--sub);font-weight:700}.lang-switch button{border:1px solid #cfd8e1;background:#fff;border-radius:999px;padding:6px 14px;font-weight:700;color:var(--sub);min-height:38px}.lang-switch button.on{background:var(--brand);border-color:var(--brand);color:#fff}
-    .checks{border:1px solid #f0d9a8;background:#fffaf0;border-radius:14px;padding:14px 16px;margin:0 0 16px}.checks h2{margin:0 0 4px;font-size:1rem;color:#7a5512}.checks>p{margin:0 0 10px;color:#8a6a2f;font-size:.84rem;line-height:1.5}.checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}.checks li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;font-size:.9rem;line-height:1.55;color:#4d3a12}.checks li button{flex:none;border:1px solid #e2c48a;background:#fff;color:#7a5512;border-radius:10px;padding:6px 12px;font-weight:700;font-size:.84rem;min-height:36px}
+    .checks{border:1px solid #f0d9a8;background:#fffaf0;border-radius:14px;padding:14px 16px;margin:0 0 16px}.checks h2{margin:0 0 4px;font-size:1rem;color:#7a5512}.checks>p{margin:0 0 10px;color:#8a6a2f;font-size:.84rem;line-height:1.5}.checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}.checks li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;font-size:.9rem;line-height:1.55;color:#4d3a12}.checks li .acts{display:flex;gap:6px;flex:none}.checks li .ignore{border-color:transparent;background:none;color:#9a7a3f;font-weight:600;padding:6px 8px}.checks li button{flex:none;border:1px solid #e2c48a;background:#fff;color:#7a5512;border-radius:10px;padding:6px 12px;font-weight:700;font-size:.84rem;min-height:36px}
     .ai-links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.ai-links a{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid #cfd8e1;border-radius:12px;background:#fff;padding:10px 6px;text-decoration:none;color:var(--brand);font-weight:800;font-size:.92rem}.ai-links a:hover{background:#f3f7fb}.ai-links a span{font-weight:500;color:var(--sub);font-size:.74rem}
     .big-copy{width:100%;margin-top:14px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:1.05rem;padding:15px}.big-copy:hover{background:var(--brand-2)}
     .send-title{margin:26px 0 4px;font-size:1.05rem}.send-sub{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.send-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.send{border:1px solid #cfd8e1;border-radius:14px;background:#fff;padding:14px;text-align:left;display:flex;flex-direction:column;gap:5px;min-height:92px}.send:hover{background:#f3f7fb;border-color:var(--brand-2)}.send:disabled{opacity:.6;cursor:wait}.send b{color:var(--brand);font-size:1rem}.send span{color:var(--sub);font-size:.8rem;line-height:1.45}
@@ -144,7 +144,7 @@
 
       <section class="step" data-step="5" data-title="完成" hidden>
         <div class="step-head"><span class="step-no">STEP 5 / 5</span><h1>完成！傳給繪師吧</h1><p>確認內容後，選一種方式傳給繪師。要修改可以點上方的步驟。</p></div>
-        <div class="checks" id="checks" hidden><h2>傳送前看一下</h2><p>這些地方繪師可能會誤會，建議先修改（不改也可以傳送）。</p><ul id="checkList"></ul></div>
+        <div class="checks" id="checks" hidden><h2>傳送前看一下</h2><p>這些地方繪師可能會誤會，建議先修改（不改也可以傳送）。</p><ul id="checkList"></ul><input type="hidden" id="ignoredChecks"></div>
         <details class="translate" id="translatePanel"><summary>委託外國繪師？用 AI 翻譯成其他語言<span>選填</span></summary>
           <ol class="t-steps">
             <li><b>選語言，複製翻譯指令</b>
@@ -232,7 +232,8 @@
         step=Math.min(LAST,Math.max(1,n));
         sections.forEach((s,i)=>{s.hidden=i+1!==step});
         prevBtn.hidden=step===1;
-        nextBtn.textContent=step===LAST?'複製訊息':`下一步：${sections[step].dataset.title}`;
+        if(step===LAST)returnToEnd=false;
+        nextBtn.textContent=step===LAST?'複製訊息':returnToEnd?'改好了，回到第 5 步':`下一步：${sections[step].dataset.title}`;
         if(step===LAST){render();feedback.textContent=''}
         updateSteps();
         try{localStorage.setItem(STEP_KEY,String(step))}catch{}
@@ -241,7 +242,8 @@
       }
       stepsEl.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(Number(b.dataset.go))});
       prevBtn.addEventListener('click',()=>go(step-1));
-      nextBtn.addEventListener('click',async()=>{if(step<LAST){go(step+1);return}const msg=await copyMessage();feedback.textContent=msg;showToast(msg)});
+      let returnToEnd=false;
+      nextBtn.addEventListener('click',async()=>{if(step<LAST){go(returnToEnd?LAST:step+1);return}const msg=await copyMessage();feedback.textContent=msg;showToast(msg)});
       form.addEventListener('submit',e=>e.preventDefault());
       // 在第 1～4 步時，上傳圖片等提示改用浮動訊息顯示
       new MutationObserver(()=>{if(step!==LAST&&feedback.textContent.trim())showToast(feedback.textContent)}).observe(feedback,{childList:true,characterData:true,subtree:true});
@@ -310,23 +312,37 @@
         if(!t||!useT)active={text:latest,data:{...latestData,docTitle:DOC_TITLE,credit:'畫委託需求整理所',lang:'zh'}};
       }
       /* ---------- 傳送前檢查：根據實際委託常見的誤會 ---------- */
+      // 每項提醒有自己的 key（含目前內容），按「忽略」後只要內容不變就不再出現
+      const OK_LR=/畫面|觀看|看圖|視角|本人|自己的|角色的[左右]|正面|為準|為主/;
       function findChecks(){
-        const list=[], val=id=>document.getElementById(id).value.trim();
+        const list=[], val=id=>document.getElementById(id).value.trim(), el=id=>document.getElementById(id);
         const foreign=Boolean(tInput.value.trim())||document.getElementById('translatePanel').open;
-        if(val('budget')&&!/[^\d\s,.\-~～]/.test(val('budget')))list.push({text:`預算只寫了「${val('budget')}」，沒有幣別。${foreign?'外國繪師會以為是他們國家的貨幣。':'建議寫上幣別，例如「新臺幣 3,000 元」。'}`,step:1,el:document.getElementById('budget')});
-        if(/背景/.test(val('workType'))&&!/無背景|不含背景|不要背景/.test(val('workType'))&&/透明|去背/.test(val('format')))list.push({text:'委託類型寫了「含背景」，檔案格式卻寫「透明背景」，繪師會不知道要不要畫背景。如果兩種都要，請寫「另附一張去背版本」。',step:4,el:document.getElementById('format')});
-        const OK_LR=/畫面|觀看|看圖|視角|本人|自己的|角色的左|角色的右/, lr=[];
-        [...container.children].forEach((card,i)=>{const el=card.querySelector('[data-key="appearance"]');if(/[左右]/.test(el.value)&&!OK_LR.test(el.value))lr.push({el,step:2,where:`角色 ${i+1} 的外觀`})});
-        [['scene',3,'情境與構圖'],['interaction',3,'姿勢、表情與互動'],['must',4,'一定要保留的重點'],['avoid',4,'希望避免的畫法']].forEach(([id,st,where])=>{const el=document.getElementById(id);if(/[左右]/.test(el.value)&&!OK_LR.test(el.value))lr.push({el,step:st,where})});
-        if(lr.length)list.push({text:`「${lr[0].where}」寫到左右，建議註明是以「畫面（看圖的人）」還是「角色本人」的左右為準，避免畫反。`,step:lr[0].step,el:lr[0].el});
-        if(/\d+\s*[*xX×＊]\s*\d+/.test(val('size'))&&!/寬|高|橫|直|長邊|短邊/.test(val('size')))list.push({text:`尺寸「${val('size')}」建議寫成「寬 ○ × 高 ○ px」，避免寬高被看反。`,step:4,el:document.getElementById('size')});
-        if(foreign&&document.getElementById('targetLang').value!=='zh-CN'){const card=[...container.children].find(c=>/[\u4e00-\u9fff]/.test(c.querySelector('[data-key="name"]').value)&&!c.querySelector('[data-key="romaji"]').value.trim());if(card)list.push({text:'角色名字是中文，外國繪師可能念不出來。建議在角色的「更多」裡填上名字的外文拼法。',step:2,el:card.querySelector('[data-key="romaji"]')})}
-        return list;
+        if(val('budget')&&!/[^\d\s,.\-~～]/.test(val('budget')))list.push({key:'budget:'+val('budget'),text:`預算只寫了「${val('budget')}」，沒有幣別。${foreign?'外國繪師會以為是他們國家的貨幣。':'建議寫上幣別，例如「新臺幣 3,000 元」。'}`,step:1,el:el('budget')});
+        if(/背景/.test(val('workType'))&&!/無背景|不含背景|不要背景|去背/.test(val('workType'))&&/透明|去背/.test(val('format'))&&!/另附|另外|兩種|兩個版本|兩版|各一|也要|和.*背景/.test(val('format')))list.push({key:'bg:'+val('workType')+'|'+val('format'),text:'委託類型寫了「含背景」，檔案格式卻寫「透明背景」，繪師會不知道要不要畫背景。如果兩種都要，請把檔案格式寫成「PNG，另附一張去背版本」。',step:4,el:el('format')});
+        const lr=[];
+        [...container.children].forEach((card,i)=>{const e=card.querySelector('[data-key="appearance"]');if(/[左右]/.test(e.value)&&!OK_LR.test(e.value))lr.push({el:e,step:2,where:`角色 ${i+1} 的外觀`})});
+        [['scene',3,'情境與構圖'],['interaction',3,'姿勢、表情與互動'],['must',4,'一定要保留的重點'],['avoid',4,'希望避免的畫法']].forEach(([id,st,where])=>{const e=el(id);if(/[左右]/.test(e.value)&&!OK_LR.test(e.value))lr.push({el:e,step:st,where})});
+        lr.forEach(x=>list.push({key:'lr:'+x.where+':'+x.el.value,text:`「${x.where}」寫到左右，建議加上「以畫面（看圖的人）為準」或「以角色本人為準」，避免畫反。`,step:x.step,el:x.el}));
+        if(/\d+\s*[*xX×＊]\s*\d+/.test(val('size'))&&!/寬|高|橫|直|長邊|短邊/.test(val('size')))list.push({key:'size:'+val('size'),text:`尺寸「${val('size')}」建議寫成「寬 ○ × 高 ○ px」，避免寬高被看反。`,step:4,el:el('size')});
+        if(foreign&&el('targetLang').value!=='zh-CN')[...container.children].forEach(c=>{const name=c.querySelector('[data-key="name"]').value.trim();if(/[一-鿿]/.test(name)&&!c.querySelector('[data-key="romaji"]').value.trim())list.push({key:'romaji:'+name,text:`「${name}」是中文名字，外國繪師可能念不出來。建議在這位角色的「更多」裡填上外文拼法。`,step:2,el:c.querySelector('[data-key="romaji"]')})});
+        const ignored=new Set(el('ignoredChecks').value.split('\n').filter(Boolean));
+        return list.filter(c=>!ignored.has(c.key));
       }
+      let lastCheckKeys=null;
       function showChecks(){
         const box=document.getElementById('checks'), ul=document.getElementById('checkList'), list=latestData.sections.length?findChecks():[];
+        const keys=new Set(list.map(c=>c.key));
+        if(lastCheckKeys&&step===LAST){const solved=[...lastCheckKeys].filter(k=>!keys.has(k)&&!document.getElementById('ignoredChecks').value.split('\n').includes(k)).length;if(solved)showToast(`✓ 已解決 ${solved} 項提醒`)}
+        lastCheckKeys=keys;
         box.hidden=!list.length;
-        ul.replaceChildren(...list.map(c=>{const li=document.createElement('li');const span=document.createElement('span');span.textContent=c.text;const b=document.createElement('button');b.type='button';b.textContent='去修改';b.addEventListener('click',()=>{go(c.step,false);const d=c.el.closest('details');if(d)d.open=true;setTimeout(()=>{c.el.scrollIntoView({behavior:'smooth',block:'center'});c.el.focus({preventScroll:true})},60)});li.append(span,b);return li}));
+        ul.replaceChildren(...list.map(c=>{
+          const li=document.createElement('li'), span=document.createElement('span'), acts=document.createElement('span'); acts.className='acts';
+          span.textContent=c.text;
+          const fix=document.createElement('button'); fix.type='button'; fix.textContent='去修改';
+          fix.addEventListener('click',()=>{returnToEnd=true;go(c.step,false);const d=c.el.closest('details');if(d)d.open=true;setTimeout(()=>{c.el.scrollIntoView({behavior:'smooth',block:'center'});c.el.focus({preventScroll:true})},60)});
+          const skip=document.createElement('button'); skip.type='button'; skip.className='ignore'; skip.textContent='忽略';
+          skip.addEventListener('click',()=>{const f=document.getElementById('ignoredChecks');f.value=[...f.value.split('\n').filter(Boolean),c.key].join('\n');fireInput();showToast('已忽略這項提醒')});
+          acts.append(fix,skip); li.append(span,acts); return li}));
       }
       function render(){
         latestData=collect();
@@ -394,6 +410,6 @@ ${sourceText}
     })();
   </script>
   <script src="./export.js?v=20261117f" defer></script>
-  <script src="./draft.js?v=20261117f" defer></script>
+  <script src="./draft.js?v=20261117g" defer></script>
 </body>
 </html>
