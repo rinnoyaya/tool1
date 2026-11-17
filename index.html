@@ -41,18 +41,20 @@
     .char-tools{display:flex;gap:14px}.text-btn{border:0;background:none;color:var(--brand-2);font-weight:700;padding:6px 0;font-size:.88rem}.text-btn:hover{text-decoration:underline}.remove{color:#a14b4b}
     .add{width:100%;border:1.5px dashed #b6c4d2;border-radius:14px;background:#fff;color:var(--brand-2);padding:14px;font-weight:700}.add:hover{background:#f3f7fb}
     details.more{margin-top:4px;grid-column:1/-1}details.more summary{cursor:pointer;color:var(--brand-2);font-weight:700;font-size:.9rem;padding:4px 0;list-style:none}details.more summary::before{content:"＋ "}details.more[open] summary::before{content:"－ "}details.more .grid{margin-top:12px}
-    /* 上傳 */
-    .upload{border:1.5px dashed #c4cfda;border-radius:14px;padding:14px;background:#fbfcfd}.upload.dragging{border-color:var(--brand-2);border-style:solid;background:#eef5fb}
-    .upload input{font-size:.86rem;border:0;padding:0;color:var(--sub);max-width:100%}.upload input::file-selector-button{border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;padding:10px 16px;margin-right:12px;cursor:pointer}.upload input::file-selector-button:hover{background:var(--brand-2)}.upload-note{font-size:.8rem;color:#7a8794;line-height:1.5;margin-top:6px}
-    .image-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:10px;margin-top:10px}.image-list:empty{display:none}
-    .image-item{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.image-item img{display:block;width:100%;height:110px;object-fit:contain;background:#f0f3f6}
-    .image-item .image-name{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 10px 0;font-size:.76rem;color:#5d6b7a}
-    .image-item button{position:absolute;top:6px;right:6px;border:0;border-radius:8px;background:#1c2b3ad9;color:#fff;min-width:30px;min-height:30px;font-size:1rem}
-    .image-size{display:block;padding:6px 10px 10px;font-size:.82rem;font-weight:700}.image-size input[type=range]{display:block;width:100%;margin:6px 0 0;accent-color:var(--brand-2);min-height:26px}.image-size output{color:var(--brand-2)}
+    /* 參考圖 */
+    .upload{border:1.5px dashed #c4cfda;border-radius:14px;padding:12px;background:#fbfcfd}.upload.dragging{border-color:var(--brand-2);border-style:solid;background:#eef5fb}
+    .upload-note{font-size:.8rem;color:#7a8794;line-height:1.5;margin-top:10px}
+    .image-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+    .thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#eef1f4;border:1px solid var(--line)}.thumb img{display:block;width:100%;height:100%;object-fit:cover}
+    .thumb-remove{position:absolute;top:5px;right:5px;border:0;border-radius:50%;background:#1c2b3ae6;color:#fff;width:32px;height:32px;font-size:1.1rem;line-height:1}
+    .thumb.bad img{opacity:.25}.thumb.bad span{position:absolute;inset:auto 0 0 0;background:#a14b4b;color:#fff;font-size:.7rem;padding:4px;text-align:center}
+    .add-image{aspect-ratio:1;border:0;border-radius:12px;background:#e9f0f7;color:var(--brand);font-weight:700;font-size:.86rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}.add-image span{font-size:1.7rem;line-height:1}.add-image:hover{background:#dce8f3}
+    /* 快速選項 */
+    .chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{border:1px solid #cfd8e1;border-radius:999px;background:#fff;color:var(--sub);padding:7px 14px;font-size:.86rem;font-weight:600;min-height:36px}.chips button.on{background:var(--brand);border-color:var(--brand);color:#fff}
     /* 完成頁 */
     .preview{white-space:pre-wrap;overflow-wrap:anywhere;min-height:220px;max-height:46vh;overflow:auto;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:18px;line-height:1.8;font-size:.93rem}.placeholder{color:#8a96a3}
     .big-copy{width:100%;margin-top:14px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:1.05rem;padding:15px}.big-copy:hover{background:var(--brand-2)}
-    .export-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+    .send-title{margin:26px 0 4px;font-size:1.05rem}.send-sub{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.send-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.send{border:1px solid #cfd8e1;border-radius:14px;background:#fff;padding:14px;text-align:left;display:flex;flex-direction:column;gap:5px;min-height:92px}.send:hover{background:#f3f7fb;border-color:var(--brand-2)}.send:disabled{opacity:.6;cursor:wait}.send b{color:var(--brand);font-size:1rem}.send span{color:var(--sub);font-size:.8rem;line-height:1.45}
     .ghost{border:1px solid #cfd8e1;border-radius:12px;background:#fff;color:var(--brand);font-weight:700;padding:11px 8px;min-height:46px;font-size:.9rem}.ghost:hover{background:#f3f7fb}.ghost:disabled{opacity:.55;cursor:wait}
     .feedback{margin:12px 0 0;color:var(--ok);font-size:.88rem;min-height:1.3em}
     .tools{margin-top:22px;border-top:1px solid var(--line);padding-top:18px;display:flex;flex-direction:column;gap:12px}
@@ -65,16 +67,18 @@
     .nav-inner{max-width:760px;margin:auto;display:flex;gap:10px}.nav button{min-height:50px;border-radius:14px;font-weight:800;font-size:1rem}
     .nav .back{flex:0 0 32%;border:1px solid #cfd8e1;background:#fff;color:var(--brand)}.nav .next{flex:1;border:0;background:var(--brand);color:#fff}.nav .next:hover{background:var(--brand-2)}
     .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translate(-50%,10px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:30;max-width:calc(100% - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
-    /* PDF 預覽視窗（沿用原功能） */
-    .primary,.secondary{border-radius:10px;padding:11px 16px;font-weight:700;min-height:44px}.primary{border:1px solid var(--brand);background:var(--brand);color:#fff}.secondary{border:1px solid #cfd8e1;background:#fff;color:var(--brand)}
-    .pdf-dialog{border:0;border-radius:18px;padding:0;width:min(1100px,calc(100% - 24px));max-height:min(92vh,1100px);color:var(--ink);background:#f2f5f8;box-shadow:0 24px 70px #0b213c55}.pdf-dialog::backdrop{background:#11233ac9}.pdf-shell{display:flex;flex-direction:column;max-height:min(92vh,1100px)}.pdf-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;background:#fff;border-bottom:1px solid var(--line);padding:20px 24px}.pdf-head h2{margin:0 0 5px;font-size:1.25rem}.pdf-head p{margin:0;color:var(--sub);line-height:1.5;font-size:.9rem}.pdf-close{border:1px solid #cfd8e1;border-radius:10px;background:#fff;font-size:1.3rem;width:42px;height:42px;flex:none}.pdf-pages{overflow:auto;padding:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:22px;align-items:start}.pdf-card{min-width:0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}.pdf-card h3{margin:0 0 12px;font-size:1rem}.pdf-sheet{display:block;width:100%;height:auto;aspect-ratio:1080/1528;border:1px solid #d3dce5;background:#fff}.page-control{margin-top:15px}.page-control label{display:block;font-weight:700;font-size:.9rem;margin-bottom:6px}.page-control input{width:100%;accent-color:var(--brand-2);min-height:30px}.page-help{font-size:.8rem;color:var(--sub);line-height:1.5;margin:5px 0 0}.pdf-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;background:#fff;border-top:1px solid var(--line)}.pdf-status{color:var(--sub);font-size:.9rem;line-height:1.4}
-    .pdf-image-panel{background:#fff;border-bottom:1px solid var(--line);padding:11px 24px}.pdf-image-panel summary{cursor:pointer;color:var(--brand-2);font-size:.95rem;font-weight:700}.pdf-image-note{color:var(--sub);font-size:.83rem;line-height:1.5;margin:7px 0 9px}.pdf-image-list{display:flex;gap:10px;overflow:auto;max-height:180px;padding:3px 1px 10px}.pdf-image-item{flex:0 0 min(230px,80vw);display:grid;grid-template-columns:54px minmax(0,1fr);gap:5px 10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;background:#f8fbfd}.pdf-image-item img{width:54px;height:54px;object-fit:contain;background:#edf2f6;border-radius:6px;grid-row:span 2}.pdf-image-item label{display:flex;gap:5px;min-width:0;font-size:.84rem;font-weight:700;white-space:nowrap}.pdf-image-name{min-width:0;overflow:hidden;text-overflow:ellipsis}.pdf-image-item input{width:100%;accent-color:var(--brand-2);min-height:28px}.pdf-image-item output{color:var(--brand-2);flex:none}
+    /* 成品視窗 */
+    .big{border:0;border-radius:12px;background:var(--brand);color:#fff;font-weight:800;padding:13px 18px;min-height:48px}.big:hover{background:var(--brand-2)}
+    .result{border:0;border-radius:20px;padding:0;width:min(560px,calc(100% - 24px));max-height:min(92vh,900px);color:var(--ink);background:#fff;box-shadow:0 24px 70px #0b213c55}.result::backdrop{background:#11233ac9}
+    .result-shell{display:flex;flex-direction:column;max-height:min(92vh,900px)}.result-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}.result-head h2{margin:0;font-size:1.2rem}
+    .result-head button{border:0;background:var(--soft);border-radius:50%;width:38px;height:38px;font-size:1.2rem}
+    .result-pages{overflow:auto;padding:4px 20px 16px;display:flex;flex-direction:column;gap:12px;background:var(--soft);border-block:1px solid var(--line)}.result-pages img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}.result-pages img:first-child{margin-top:12px}
+    .result-foot{padding:14px 20px calc(16px + env(safe-area-inset-bottom))}.result-foot p{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.result-actions{display:flex;gap:10px}.result-actions button{flex:1}.result-actions .ghost{min-height:48px}
     @media(max-width:620px){
       .top{padding:16px 16px 4px}.author{font-size:.78rem}.steps{padding:0 16px}.steps button span.label{display:none}.steps button{padding-top:4px}
       main{padding:0 12px}.card{padding:20px 16px;border-radius:18px}.step-head h1{font-size:1.35rem}
-      .grid{grid-template-columns:1fr}.field.full{grid-column:auto}.export-row{grid-template-columns:1fr 1fr}.export-row .ghost:first-child{grid-column:1/-1}
+      .grid{grid-template-columns:1fr}.field.full{grid-column:auto}.send-grid{grid-template-columns:1fr}.send{min-height:0}
       .nav{padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
-      .pdf-head{padding:16px}.pdf-pages{padding:14px;grid-template-columns:1fr}.pdf-footer{padding:14px;flex-direction:column;align-items:stretch}.pdf-image-panel{padding:11px 16px}
     }
   </style>
 </head>
@@ -92,8 +96,8 @@
       <section class="step" data-step="1" data-title="基本資訊">
         <div class="step-head"><span class="step-no">STEP 1 / 5</span><h1>想委託什麼？</h1><p>只填需要的項目就好，空白的欄位不會出現在訊息裡。</p></div>
         <div class="grid">
-          <div class="field full"><label for="workType">委託類型</label><input id="workType" placeholder="例：單人全身插圖、Q版貼圖"></div>
-          <div class="field full"><label for="purpose">使用用途</label><input id="purpose" placeholder="例：私人收藏、社群頭像"></div>
+          <div class="field full"><label for="workType">委託類型</label><input id="workType" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="workType"><button type="button">頭像</button><button type="button">半身</button><button type="button">全身</button><button type="button">Q版</button><button type="button">雙人</button><button type="button">立繪</button><button type="button">含背景</button></div></div>
+          <div class="field full"><label for="purpose">使用用途</label><input id="purpose" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="purpose"><button type="button">私人收藏</button><button type="button">社群頭像</button><button type="button">公開展示</button><button type="button">印製周邊</button><button type="button">商業使用</button></div></div>
           <div class="field"><label for="budget">預算 <span class="hint">選填</span></label><input id="budget" placeholder="例：新臺幣 3,000 元左右"></div>
           <div class="field"><label for="deadline">希望交期 <span class="hint">選填</span></label><input id="deadline" placeholder="例：12 月 20 日前；可討論"></div>
         </div>
@@ -119,10 +123,10 @@
         <div class="step-head"><span class="step-no">STEP 4 / 5</span><h1>交付與注意事項</h1><p>尺寸、格式和一定要注意的地方。</p></div>
         <div class="grid">
           <div class="field"><label for="size">尺寸與比例</label><input id="size" placeholder="例：3000 × 4000 px、3:4"></div>
-          <div class="field"><label for="format">檔案格式</label><input id="format" placeholder="例：PNG、透明背景"></div>
+          <div class="field"><label for="format">檔案格式</label><input id="format" placeholder="例：PNG"><div class="chips" data-for="format"><button type="button">PNG</button><button type="button">JPG</button><button type="button">PSD</button><button type="button">透明背景</button></div></div>
           <div class="field full"><label for="must">一定要保留的重點</label><textarea id="must" placeholder="例：狐耳和尾巴尖端是白色"></textarea></div>
           <div class="field full"><label for="avoid">希望避免的畫法</label><textarea id="avoid" placeholder="例：不要改變圍巾顏色；不要加入文字"></textarea></div>
-          <div class="field full" id="otherReferenceUpload"><label for="otherImages">其他參考圖 <span class="hint">背景、姿勢、服裝、氛圍</span></label><div class="upload"><input id="otherImages" class="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif" multiple><div class="upload-note">可一次選多張；電腦也可以直接把圖片拖進來。</div><div class="image-list"></div></div></div>
+          <div class="field full" id="otherReferenceUpload"><label>其他參考圖 <span class="hint">背景、姿勢、服裝、氛圍</span></label><div class="upload"><div class="image-list"></div><input id="otherImages" class="image-input" type="file" accept="image/*" multiple hidden><div class="upload-note">可一次選多張。電腦可以把圖片拖進來，或直接貼上（Ctrl+V）。</div></div></div>
           <details class="more"><summary>更多：參考連結、想對繪師說的話</summary><div class="grid">
             <div class="field full"><label for="references">參考資料連結或說明</label><textarea id="references" placeholder="貼上角色設定圖連結，或註明會另附參考圖片"></textarea></div>
             <div class="field full"><label for="notes">其他想對繪師說的話</label><textarea id="notes" placeholder="例：細節若有疑問，歡迎先和我討論。謝謝！"></textarea></div>
@@ -131,13 +135,15 @@
       </section>
 
       <section class="step" data-step="5" data-title="完成" hidden>
-        <div class="step-head"><span class="step-no">STEP 5 / 5</span><h1>完成！傳給繪師吧</h1><p>確認下面的訊息，複製後貼到和繪師的對話中。要修改可以點上方的步驟。</p></div>
+        <div class="step-head"><span class="step-no">STEP 5 / 5</span><h1>完成！傳給繪師吧</h1><p>確認內容後，選一種方式傳給繪師。要修改可以點上方的步驟。</p></div>
         <div class="preview" id="preview" aria-live="polite"><span class="placeholder">還沒有填寫內容。</span></div>
-        <button type="button" class="big-copy" id="copy">複製全部內容</button>
-        <div class="export-row">
-          <button type="button" class="ghost" id="exportPng">長圖片 PNG</button>
-          <button type="button" class="ghost" id="exportPdf">PDF</button>
-          <button type="button" class="ghost" id="download">文字檔 TXT</button>
+        <button type="button" class="big-copy" id="copy">複製文字</button>
+        <h2 class="send-title">連同參考圖一起傳</h2>
+        <p class="send-sub">按一下就會自動排好版，不需要任何設定。</p>
+        <div class="send-grid">
+          <button type="button" class="send" id="makeImages"><b>存成圖片</b><span>文字和參考圖排在一起。適合社群私訊、Discord、LINE</span></button>
+          <button type="button" class="send" id="makePdf"><b>存成 PDF</b><span>一份完整文件。適合 Email</span></button>
+          <button type="button" class="send" id="shareOriginals"><b>傳送原圖</b><span>文字加上所有原始參考圖，畫質不壓縮</span></button>
         </div>
         <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
         <div class="tools">
@@ -162,14 +168,18 @@
   <div class="nav"><div class="nav-inner"><button type="button" class="back" id="prevStep">上一步</button><button type="button" class="next" id="nextStep">下一步</button></div></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <dialog class="pdf-dialog" id="pdfDialog" aria-labelledby="pdfDialogTitle"><div class="pdf-shell"><div class="pdf-head"><div><h2 id="pdfDialogTitle">PDF 分頁預覽</h2><p>可先調整每張圖片大小，再拖曳頁尾位置。</p></div><button type="button" class="pdf-close" id="closePdf" aria-label="關閉預覽">×</button></div><details class="pdf-image-panel" id="pdfImagePanel" open hidden><summary>調整圖片大小</summary><p class="pdf-image-note">每張圖可設為 20%～100%；圖片大小改變後，手動分頁會重設。</p><div class="pdf-image-list" id="pdfImageList"></div></details><div class="pdf-pages" id="pdfPages"></div><div class="pdf-footer"><span class="pdf-status" id="pdfStatus" role="status" aria-live="polite"></span><button type="button" class="secondary" id="resetPages">重設自動分頁</button><button type="button" class="primary" id="downloadPdf">下載這份 PDF</button></div></div></dialog>
+  <dialog class="result" id="resultDialog" aria-labelledby="resultTitle"><div class="result-shell">
+    <div class="result-head"><h2 id="resultTitle"></h2><button type="button" id="closeResult" aria-label="關閉">×</button></div>
+    <div class="result-pages" id="resultPages"></div>
+    <div class="result-foot"><p id="resultNote" role="status" aria-live="polite"></p><div class="result-actions"><button type="button" class="ghost" id="resultDownload">下載到裝置</button><button type="button" class="big" id="resultShare">分享／儲存到相簿</button></div></div>
+  </div></dialog>
 
   <template id="characterTemplate"><div class="character"><div class="character-head"><strong class="character-title"></strong><span class="char-tools"><button type="button" class="text-btn duplicate" title="複製這位角色的文字設定（不含圖片）">複製</button><button type="button" class="text-btn remove">移除</button></span></div><div class="grid">
     <div class="field"><label>名稱／稱呼</label><input data-key="name" placeholder="例：露米"></div>
     <div class="field"><label>身分或關係</label><input data-key="role" placeholder="例：狐耳旅人"></div>
     <div class="field full"><label>外觀特徵</label><textarea data-key="appearance" placeholder="髮型、髮色、眼睛、種族特徵等。左右位置請寫清楚。"></textarea></div>
     <div class="field full"><label>服裝與配件</label><textarea data-key="clothing" placeholder="例：綠色長大衣、紅色圍巾"></textarea></div>
-    <div class="field full"><label>設定圖 <span class="hint">可選多張</span></label><div class="upload"><input class="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif" multiple aria-label="上傳角色設定圖"><div class="upload-note">複製文字時會註明「另附 N 張」；電腦可直接把圖片拖進來。</div><div class="image-list"></div></div></div>
+    <div class="field full"><label>設定圖 <span class="hint">可選多張</span></label><div class="upload"><div class="image-list"></div><input class="image-input" type="file" accept="image/*" multiple hidden aria-label="加入角色設定圖"><div class="upload-note">可一次選多張。電腦可以把圖片拖進來，或直接貼上（Ctrl+V）。</div></div></div>
     <details class="more"><summary>更多：個性、參考連結</summary><div class="grid">
       <div class="field full"><label>個性與想呈現的感覺</label><textarea data-key="personality" placeholder="例：好奇心旺盛，笑起來很有活力"></textarea></div>
       <div class="field full"><label>參考圖連結或說明</label><input data-key="reference" placeholder="例：設定圖連結"></div>
@@ -232,7 +242,7 @@
         latest=secs.length?[greeting,...secs.map(s=>`【${s.title}】\n`+s.rows.map(([a,b])=>`${a}：${b}`).join('\n')),closing].join('\n\n'):'';
         form.querySelectorAll('details.more:not([open])').forEach(d=>{if([...d.querySelectorAll('input,textarea')].some(x=>x.value.trim()))d.open=true});
         preview.textContent=latest||'還沒有填寫內容。可以點上方的步驟回去填寫。';preview.classList.toggle('placeholder',!latest);
-        updateSteps();
+        updateSteps();syncChips();
       }
       function showToast(text){toast.textContent=text;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2200)}
       async function copyMessage(){
@@ -249,7 +259,10 @@
       form.addEventListener('input',e=>{if(!e.target.matches('#backupFile'))render()});
       window.addEventListener('commission:images-changed',render);
       document.getElementById('copy').addEventListener('click',async()=>{const msg=await copyMessage();feedback.textContent=msg;showToast(msg)});
-      document.getElementById('download').addEventListener('click',()=>{render();if(!latest){feedback.textContent='請先填寫至少一項需求。';return}const url=URL.createObjectURL(new Blob(['﻿'+latest],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='繪圖委託需求.txt';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);feedback.textContent='已下載委託文字檔。'});
+      /* 快速選項：點一下加入或移除 */
+      const tokens=el=>el.value.split('、').map(x=>x.trim()).filter(Boolean);
+      form.addEventListener('click',e=>{const chip=e.target.closest('.chips button');if(!chip)return;const input=document.getElementById(chip.parentElement.dataset.for);const list=tokens(input);const i=list.indexOf(chip.textContent);if(i<0)list.push(chip.textContent);else list.splice(i,1);input.value=list.join('、');input.dispatchEvent(new Event('input',{bubbles:true}))});
+      function syncChips(){form.querySelectorAll('.chips').forEach(group=>{const list=tokens(document.getElementById(group.dataset.for));[...group.children].forEach(b=>{b.classList.toggle('on',list.includes(b.textContent));b.setAttribute('aria-pressed',list.includes(b.textContent))})})}
       window.getCommissionExportData=()=>{render();return {text:latest,data:latestData,cards:[...container.children]}};
       window.commissionCharacters={
         setCount(n){n=Math.max(1,n|0);while(container.children.length<n)addCharacter();while(container.children.length>n)container.lastElementChild.querySelector('.remove').click()},
@@ -261,7 +274,7 @@
       if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117" defer></script>
-  <script src="./draft.js?v=20261117" defer></script>
+  <script src="./export.js?v=20261117b" defer></script>
+  <script src="./draft.js?v=20261117b" defer></script>
 </body>
 </html>

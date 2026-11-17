@@ -1,88 +1,89 @@
 (() => {
-  const characters = document.getElementById('characters');
-  const otherReferences = document.getElementById('otherReferenceUpload');
-  const form = document.getElementById('briefForm');
-  const feedback = document.getElementById('feedback');
-  const pngButton = document.getElementById('exportPng');
-  const pdfButton = document.getElementById('exportPdf');
-  const pdfDialog = document.getElementById('pdfDialog');
-  const pdfPages = document.getElementById('pdfPages');
-  const pdfImagePanel = document.getElementById('pdfImagePanel');
-  const pdfImageList = document.getElementById('pdfImageList');
-  const pdfStatus = document.getElementById('pdfStatus');
-  const downloadPdf = document.getElementById('downloadPdf');
-  const attachments = new WeakMap();
-  const decodedCache = new WeakMap();
-  const W = 1080, M = 74, PAGE_H = 1528;
-  const PDF_SCALE = 2, PREVIEW_SCALE = 0.5;
-  const MAX_FILE = 10 * 1024 * 1024, MAX_PER_CHARACTER = 8;
-  const PNG_MAX_AREA = 14_500_000, PNG_PART_H = 12000;
-  const IMAGE_EXT = /\.(png|jpe?g|webp|gif|heic|heif)$/i;
-  let pdfLayout = null, manualCuts = [], pdfResizeTimer = null, pdfRevision = 0;
+  const $ = id => document.getElementById(id);
+  const characters = $('characters'), other = $('otherReferenceUpload'), form = $('briefForm'), feedback = $('feedback');
+  const dialog = $('resultDialog'), resultPages = $('resultPages'), resultTitle = $('resultTitle'), resultNote = $('resultNote');
+  const resultShare = $('resultShare'), resultDownload = $('resultDownload');
+  const attachments = new WeakMap(), decodedCache = new WeakMap();
+  const MAX_FILE = 20 * 1024 * 1024, LIMITS = { character: 8, other: 12 };
+  const IMAGE_EXT = /\.(png|jpe?g|webp|gif|heic|heif|bmp|avif)$/i;
 
-  function say(message) { feedback.textContent = message; }
-  function imagesChanged() { window.dispatchEvent(new Event('commission:images-changed')); }
-  function releaseFiles(card) {
-    for (const item of attachments.get(card) || []) URL.revokeObjectURL(item.url);
-    attachments.delete(card);
-  }
-  function normalizedSize(value) {
-    const number = Number(value);
-    return Number.isFinite(number) && number >= 20 && number <= 100 ? number : 100;
-  }
+  const say = message => { feedback.textContent = message; };
+  const imagesChanged = () => window.dispatchEvent(new Event('commission:images-changed'));
+  const groups = () => [...characters.children, other];
+  const groupOf = el => el.closest('.character') || (other.contains(el) ? other : null);
+  const limitOf = card => card === other ? LIMITS.other : LIMITS.character;
+  const itemsOf = card => attachments.get(card) || [];
 
-  /* ---------- 上傳與縮圖 ---------- */
+  /* ================= 參考圖：加入、顯示、移除 ================= */
+  function imageFrom(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('圖片無法讀取'));
+      img.src = url;
+    });
+  }
+  function decode(item) {
+    if (!decodedCache.has(item)) decodedCache.set(item, imageFrom(item.url).catch(() => null));
+    return decodedCache.get(item);
+  }
   function showImages(card) {
     const list = card.querySelector('.image-list');
     list.replaceChildren();
-    for (const item of attachments.get(card) || []) {
-      const tile = document.createElement('div'); tile.className = 'image-item';
-      const image = document.createElement('img'); image.src = item.url; image.alt = item.file.name;
-      image.loading = 'lazy'; image.decoding = 'async';
-      const name = document.createElement('span'); name.className = 'image-name'; name.textContent = item.file.name;
-      decode(item).then(ok => {
-        if (!ok) { name.textContent = `⚠ 此瀏覽器無法讀取，匯出時會略過：${item.file.name}`; name.style.color = '#9b4b4b'; }
-      });
-      const size = document.createElement('label'); size.className = 'image-size';
-      size.append('輸出大小 ');
-      const value = document.createElement('output'); value.textContent = `${item.size}%`;
-      const slider = document.createElement('input'); slider.type = 'range'; slider.min = '20'; slider.max = '100'; slider.step = '5';
-      slider.value = String(item.size); slider.setAttribute('aria-label', `${item.file.name} 的輸出大小`);
-      slider.addEventListener('input', () => { item.size = Number(slider.value); value.textContent = `${item.size}%`; });
-      slider.addEventListener('change', imagesChanged);
-      size.append(value, slider);
-      const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×';
+    const items = itemsOf(card);
+    for (const item of items) {
+      const thumb = document.createElement('div'); thumb.className = 'thumb';
+      const image = document.createElement('img'); image.src = item.url; image.alt = item.file.name; image.loading = 'lazy';
+      const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'thumb-remove'; remove.textContent = '×';
       remove.setAttribute('aria-label', `移除 ${item.file.name}`);
       remove.addEventListener('click', () => {
-        const remaining = (attachments.get(card) || []).filter(x => x !== item);
-        URL.revokeObjectURL(item.url); attachments.set(card, remaining); showImages(card);
-        imagesChanged();
+        URL.revokeObjectURL(item.url);
+        attachments.set(card, itemsOf(card).filter(x => x !== item));
+        showImages(card); imagesChanged();
       });
-      tile.append(image, name, size, remove); list.append(tile);
+      thumb.append(image, remove);
+      decode(item).then(ok => {
+        if (ok) return;
+        thumb.classList.add('bad');
+        const note = document.createElement('span'); note.textContent = '這台裝置無法讀取'; thumb.append(note);
+      });
+      list.append(thumb);
     }
+    const add = document.createElement('button'); add.type = 'button'; add.className = 'add-image';
+    add.innerHTML = '<span aria-hidden="true">＋</span>加入圖片';
+    add.hidden = items.length >= limitOf(card);
+    add.addEventListener('click', () => card.querySelector('.image-input').click());
+    list.append(add);
   }
   function addFiles(card, files) {
-    const isOther = card === otherReferences;
-    const current = attachments.get(card) || [];
+    const current = itemsOf(card).slice(), limit = limitOf(card);
     let added = 0; const problems = [];
     for (const file of files) {
       if (!file.type.startsWith('image/') && !IMAGE_EXT.test(file.name)) { problems.push(`「${file.name}」不是圖片`); continue; }
-      if (file.size > MAX_FILE) { problems.push(`「${file.name}」超過 10 MB`); continue; }
-      if (!isOther && current.length >= MAX_PER_CHARACTER) { problems.push(`每位角色最多 ${MAX_PER_CHARACTER} 張`); break; }
-      current.push({ file, url: URL.createObjectURL(file), size: 100 }); added++;
+      if (file.size > MAX_FILE) { problems.push(`「${file.name}」超過 20 MB`); continue; }
+      if (current.length >= limit) { problems.push(`這裡最多放 ${limit} 張`); break; }
+      current.push({ file, url: URL.createObjectURL(file) }); added++;
     }
     attachments.set(card, current); showImages(card);
-    say([added ? `已加入 ${added} 張參考圖。` : '', problems.length ? `未加入：${problems.join('、')}。` : ''].join(' ').trim());
+    say([added ? `已加入 ${added} 張圖片。` : '', problems.length ? `未加入：${problems.join('、')}。` : ''].join(' ').trim());
     if (added) imagesChanged();
   }
-  const groupOf = el => el.closest('.character') || (otherReferences.contains(el) ? otherReferences : null);
+  function releaseFiles(card) {
+    for (const item of itemsOf(card)) URL.revokeObjectURL(item.url);
+    attachments.delete(card);
+  }
+  // 每張角色卡片（包含之後新增的）都放上「加入圖片」按鈕
+  const ensureTiles = () => groups().forEach(card => { if (!card.querySelector('.add-image')) showImages(card); });
+  new MutationObserver(ensureTiles).observe(characters, { childList: true });
+  ensureTiles();
+
   form.addEventListener('change', event => {
     if (!event.target.matches('.image-input')) return;
     const card = groupOf(event.target);
     if (card) addFiles(card, [...event.target.files]);
     event.target.value = '';
   });
-  // 電腦版：把圖片直接拖曳到上傳框
+  // 電腦：拖曳圖片
   let dragTarget = null;
   form.addEventListener('dragover', event => {
     const box = event.target.closest('.upload');
@@ -101,467 +102,343 @@
     const card = groupOf(box);
     if (card) addFiles(card, [...(event.dataTransfer?.files || [])]);
   });
-  // 避免拖曳失誤時瀏覽器直接開啟圖片、離開頁面
   window.addEventListener('dragover', event => { if (!event.target.closest?.('.upload')) event.preventDefault(); });
   window.addEventListener('drop', event => { if (!event.target.closest?.('.upload')) event.preventDefault(); });
+  // 電腦：直接貼上（Ctrl+V）截圖或複製的圖片
+  document.addEventListener('paste', event => {
+    const files = [...(event.clipboardData?.files || [])].filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+    const step = form.querySelector('.step:not([hidden])')?.dataset.step;
+    const card = step === '2' ? (document.activeElement?.closest?.('.character') || characters.firstElementChild) : step === '4' ? other : null;
+    if (!card) return;
+    event.preventDefault();
+    addFiles(card, files.map((f, i) => new File([f], f.name && f.name !== 'image.png' ? f.name : `貼上的圖片-${Date.now()}-${i + 1}.png`, { type: f.type })));
+  });
 
   window.commissionImageDraft = {
-    count(card) { return (attachments.get(card) || []).length; },
+    count(card) { return itemsOf(card).length; },
     release(card) { releaseFiles(card); imagesChanged(); },
     snapshot() {
-      const pack = card => (attachments.get(card) || []).map(({ file, size }) => ({
-        name: file.name, type: file.type, lastModified: file.lastModified, blob: file, size,
-      }));
-      return { characters: [...characters.children].map(pack), other: pack(otherReferences) };
+      const pack = card => itemsOf(card).map(({ file }) => ({ name: file.name, type: file.type, lastModified: file.lastModified, blob: file }));
+      return { characters: [...characters.children].map(pack), other: pack(other) };
     },
     restore(data) {
       const restoreGroup = (card, list) => {
         if (!card) return;
         releaseFiles(card);
-        const items = (Array.isArray(list) ? list : []).filter(x => x?.blob instanceof Blob)
-          .map(x => {
-            const file = new File([x.blob], x.name || '參考圖', {
-              type: x.type || x.blob.type, lastModified: x.lastModified || Date.now(),
-            });
-            return { file, url: URL.createObjectURL(file), size: normalizedSize(x.size) };
-          });
-        attachments.set(card, items); showImages(card);
+        attachments.set(card, (Array.isArray(list) ? list : []).filter(x => x?.blob instanceof Blob).map(x => {
+          const file = new File([x.blob], x.name || '參考圖', { type: x.type || x.blob.type, lastModified: x.lastModified || Date.now() });
+          return { file, url: URL.createObjectURL(file) };
+        }));
+        showImages(card);
       };
       [...characters.children].forEach((card, i) => restoreGroup(card, data?.characters?.[i]));
-      restoreGroup(otherReferences, data?.other);
+      restoreGroup(other, data?.other);
       imagesChanged();
     },
   };
 
-  /* ---------- 排版 ---------- */
-  function imageFrom(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('有圖片無法讀取，請改用 JPG、PNG 或 WebP 再試。'));
-      img.src = url;
-    });
-  }
-  function decode(item) {
-    if (!decodedCache.has(item)) decodedCache.set(item, imageFrom(item.url).catch(() => null));
-    return decodedCache.get(item);
-  }
+  /* ================= 自動排版（圖片與 PDF 共用） ================= */
+  const W = 1080, M = 72, PAGE_H = 1528, TOP = 70, FOOT = 92, SCALE = 2;
+  const family = '"PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif';
+  const F = { title: `900 46px ${family}`, head: `800 31px ${family}`, label: `700 24px ${family}`, body: `400 28px ${family}`, small: `400 21px ${family}` };
+  const C = { ink: '#1c2b3a', navy: '#183e60', label: '#2a5a82', sub: '#7b8794', band: '#eef3f8', warm: '#eeb87a', line: '#e3e7ec' };
+
   function wrap(ctx, text, maxWidth, font) {
     ctx.font = font;
     const lines = [];
-    for (const paragraph of text.split('\n')) {
-      if (!paragraph) { lines.push(''); continue; }
-      let line = '';
-      // 英文單字與數字盡量不從中間斷開，中文逐字換行
-      for (const token of paragraph.match(/[A-Za-z0-9@#&_.,:;'"!?()\-/+%]+|\s+|./gu) || []) {
-        if (line && ctx.measureText(line + token).width > maxWidth) {
-          if (ctx.measureText(token).width > maxWidth) {
-            for (const char of Array.from(token)) {
-              if (line && ctx.measureText(line + char).width > maxWidth) { lines.push(line); line = char; }
-              else line += char;
-            }
-            continue;
+    let line = '';
+    // 英文單字與數字不從中間斷開，中文逐字換行
+    for (const token of text.match(/[A-Za-z0-9@#&_.,:;'"!?()\-/+%]+|\s+|./gu) || []) {
+      if (line && ctx.measureText(line + token).width > maxWidth) {
+        if (ctx.measureText(token).width > maxWidth) {
+          for (const char of Array.from(token)) {
+            if (line && ctx.measureText(line + char).width > maxWidth) { lines.push(line); line = char; }
+            else line += char;
           }
-          lines.push(line.trimEnd()); line = token.trimStart();
-        } else line += token;
-      }
-      lines.push(line);
+          continue;
+        }
+        lines.push(line.trimEnd()); line = token.trimStart();
+      } else line += token;
     }
+    lines.push(line);
     return lines;
   }
-  async function buildLayout() {
+  function roundedPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+  }
+  async function buildPages() {
     const { data, cards } = window.getCommissionExportData();
-    const groups = [...cards, otherReferences];
-    const hasImage = groups.some(card => (attachments.get(card) || []).length);
-    if (!data.sections.length && !hasImage) throw new Error('請先填寫需求或上傳參考圖。');
-    const decoded = new Map(); let failed = 0;
-    for (const card of groups) {
+    const all = [...cards, other];
+    if (!data.sections.length && !all.some(card => itemsOf(card).length)) throw new Error('請先填寫需求或加入參考圖。');
+    const pictures = new Map(); let failed = 0;
+    for (const card of all) {
       const list = [];
-      for (const item of attachments.get(card) || []) {
-        const image = await decode(item);
-        if (image) list.push({ image, size: normalizedSize(item.size) }); else failed++;
-      }
-      decoded.set(card, list);
+      for (const item of itemsOf(card)) { const image = await decode(item); if (image) list.push(image); else failed++; }
+      pictures.set(card, list);
     }
     const measure = document.createElement('canvas').getContext('2d');
-    const ops = [], strongBreaks = [], lineEnds = [], imageRegions = [];
-    let y = 78;
-    const family = '"PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif';
-    const bodyFont = `27px ${family}`, labelFont = `bold 27px ${family}`;
-    const headingFont = `bold 34px ${family}`, titleFont = `bold 43px ${family}`;
-    function text(value, x, font, color, h, breakable = true) {
-      ops.push({ type: 'text', value, x, y, font, color, h });
-      y += h; if (breakable) lineEnds.push(y);
-    }
-    function title(value) { for (const line of wrap(measure, value, W - 2 * M, titleFont)) text(line, M, titleFont, '#173b59', 62); }
-    function heading(value) {
-      const wrapped = wrap(measure, value, W - 2 * M - 42, headingFont);
-      ops.push({ type: 'headingBand', y: y - 10, h: wrapped.length * 52 + 17 });
-      for (const line of wrapped) text(line, M + 21, headingFont, '#1e526c', 52, false);
-      y += 13;
-    }
-    function paragraph(value) {
+    const blocks = [];
+    const space = h => blocks.push({ h, space: true });
+    const text = (value, font, color, h, dy = 0, keep = false) => blocks.push({ h, keep, draw(ctx, y) { ctx.font = font; ctx.fillStyle = color; ctx.fillText(value, M, y + dy); } });
+    const paragraph = value => {
       for (const p of value.split('\n')) {
-        if (!p) { y += 23; continue; }
-        for (const line of wrap(measure, p, W - 2 * M, bodyFont)) text(line, M, bodyFont, '#344557', 44);
-        y += 5;
+        if (!p.trim()) { space(18); continue; }
+        for (const line of wrap(measure, p, W - 2 * M, F.body)) text(line, F.body, C.ink, 44, 8);
       }
-    }
-    function row(label, value) {
-      const caption = `${label}：`;
-      measure.font = labelFont;
-      const contentX = M + measure.measureText(caption).width + 14;
-      ops.push({ type: 'text', value: caption, x: M, y, font: labelFont, color: '#2c6b80', h: 44 });
-      value.split('\n').forEach(p => {
-        if (!p) { y += 22; return; }
-        for (const line of wrap(measure, p, W - M - contentX, bodyFont)) text(line, contentX, bodyFont, '#344557', 44);
-      });
-      y += 9;
-    }
-    function divider() { ops.push({ type: 'divider', y }); strongBreaks.push(y + 8); }
-    function addImages(list, compact = false) {
+    };
+    const heading = value => {
+      const label = wrap(measure, value, W - 2 * M - 44, F.head)[0];
+      blocks.push({ h: 62, keep: true, draw(ctx, y) {
+        ctx.fillStyle = C.band; roundedPath(ctx, M, y, W - 2 * M, 56, 14); ctx.fill();
+        ctx.font = F.head; ctx.fillStyle = C.navy; ctx.fillText(label, M + 22, y + 12);
+      } });
+      space(14);
+    };
+    // 左欄標籤、右欄內容，短的項目只佔一行
+    const LABEL_W = 222;
+    const row = (label, value) => {
+      const lines = value.split('\n').filter(p => p.trim()).flatMap(p => wrap(measure, p, W - 2 * M - LABEL_W, F.body));
+      lines.forEach((line, i) => blocks.push({ h: 44, draw(ctx, y) {
+        if (!i) { ctx.font = F.label; ctx.fillStyle = C.label; ctx.fillText(label, M, y + 11); }
+        ctx.font = F.body; ctx.fillStyle = C.ink; ctx.fillText(line, M + LABEL_W, y + 8);
+      } }));
+      space(12);
+    };
+    const images = list => {
       if (!list.length) return;
-      y += 8;
-      const columnWidth = compact ? Math.floor((W - 2 * M - 20) / 2) : W - 2 * M;
-      const perRow = compact ? 2 : 1;
-      for (let i = 0; i < list.length; i += perRow) {
-        const items = list.slice(i, i + perRow).map(({ image, size }) => {
-          const scale = Math.min(1, (columnWidth - 28) / image.width, (compact ? 580 : 950) / image.height) * size / 100;
-          return { image, w: Math.max(1, Math.round(image.width * scale)), h: Math.max(1, Math.round(image.height * scale)) };
+      const cols = list.length === 1 ? 1 : 2, gap = 20;
+      const colW = (W - 2 * M - gap * (cols - 1)) / cols, maxH = cols === 1 ? 640 : 560;
+      for (let i = 0; i < list.length; i += cols) {
+        const cells = list.slice(i, i + cols).map(image => {
+          const scale = Math.min(1, colW / image.naturalWidth, maxH / image.naturalHeight);
+          return { image, w: Math.max(1, Math.round(image.naturalWidth * scale)), h: Math.max(1, Math.round(image.naturalHeight * scale)) };
         });
-        const rowHeight = Math.max(...items.map(item => item.h));
-        items.forEach((item, column) => {
-          const boxX = M + column * (columnWidth + 20);
-          ops.push({ type: 'image', image: item.image, x: boxX + (columnWidth - item.w) / 2,
-            y: y + 14 + (rowHeight - item.h) / 2, w: item.w, h: item.h,
-            boxX, boxW: columnWidth, boxY: y, boxH: rowHeight + 28 });
-        });
-        imageRegions.push({ top: y, end: y + rowHeight + 28 });
-        strongBreaks.push(y, y + rowHeight + 36);
-        y += rowHeight + 42;
+        const rowH = Math.max(...cells.map(c => c.h));
+        blocks.push({ h: rowH + 20, draw(ctx, y) {
+          cells.forEach((cell, column) => {
+            const x = M + column * (colW + gap) + (colW - cell.w) / 2, top = y + (rowH - cell.h) / 2;
+            ctx.save(); roundedPath(ctx, x, top, cell.w, cell.h, 14); ctx.clip();
+            ctx.drawImage(cell.image, x, top, cell.w, cell.h); ctx.restore();
+          });
+        } });
       }
-    }
-    function closeSection() { y += 26; divider(); y += 35; }
+      space(8);
+    };
 
-    ops.push({ type: 'bar' });
-    title('繪圖委託需求'); y += 9;
-    divider(); y += 30;
-    if (data.sections.length && data.greeting) { paragraph(data.greeting); y += 28; }
-    const placed = new Set(); let otherPlaced = false;
+    blocks.push({ h: 118, draw(ctx, y) {
+      ctx.font = F.title; ctx.fillStyle = C.navy; ctx.fillText('繪圖委託需求', M, y);
+      ctx.fillStyle = C.warm; roundedPath(ctx, M, y + 70, 72, 7, 4); ctx.fill();
+    } });
+    if (data.sections.length) { paragraph(data.greeting); space(26); }
     for (const section of data.sections) {
-      const rows = section.rows.filter(r => !r[2]);
-      const others = section.kind === 'delivery' ? decoded.get(otherReferences) : [];
-      if (rows.length || section.kind !== 'delivery') {
-        heading(section.title); y += 4;
-        for (const [label, value] of rows) row(label, value);
+      heading(section.title);
+      for (const [label, value, attachmentNote] of section.rows) if (!attachmentNote) row(label, value);
+      if (section.card && pictures.get(section.card).length) {
+        text('設定圖', F.label, C.label, 40, 4, true);
+        images(pictures.get(section.card));
       }
-      if (section.card) { addImages(decoded.get(section.card) || []); placed.add(section.card); }
-      if (others.length) {
-        if (rows.length) y += 10;
-        heading('其他參考圖'); addImages(others, true); otherPlaced = true;
+      if (section.kind === 'delivery' && pictures.get(other).length) {
+        text('其他參考圖', F.label, C.label, 40, 4, true);
+        images(pictures.get(other));
       }
-      closeSection();
+      space(22);
     }
-    cards.forEach((card, index) => {
-      const list = decoded.get(card) || [];
-      if (placed.has(card) || !list.length) return;
-      heading(`角色 ${index + 1}｜參考設定圖`); addImages(list); closeSection();
-    });
-    if (!otherPlaced && decoded.get(otherReferences).length) {
-      heading('其他參考圖'); addImages(decoded.get(otherReferences), true); closeSection();
-    }
-    if (data.sections.length && data.closing) paragraph(data.closing);
-    const height = Math.ceil(y + M);
-    return { ops, height, strongBreaks, lineEnds, imageRegions, failed };
-  }
+    const tailStart = blocks.length;
+    if (data.sections.length) paragraph(data.closing);
+    const tailHeight = blocks.slice(tailStart).reduce((sum, b) => sum + b.h, 0) + 22;
 
-  /* ---------- 依區段繪製（每頁各自繪製，不再受單張畫布長度限制） ---------- */
-  function extent(op) {
-    if (op.type === 'bar') return [0, 18];
-    if (op.type === 'divider') return [op.y, op.y + 2];
-    if (op.type === 'image') return [op.boxY, op.boxY + op.boxH];
-    return [op.y, op.y + op.h];
-  }
-  function renderRegion(layout, top, end, scale, canvasH = end - top) {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(W * scale); canvas.height = Math.round(canvasH * scale);
-    const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) throw new Error('此瀏覽器無法產生圖片。');
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingQuality = 'high';
-    ctx.setTransform(scale, 0, 0, scale, 0, -top * scale);
-    ctx.beginPath(); ctx.rect(0, top, W, end - top); ctx.clip();
-    ctx.textBaseline = 'top';
-    for (const op of layout.ops) {
-      const [a, b] = extent(op);
-      if (b <= top || a >= end) continue;
-      if (op.type === 'bar') { ctx.fillStyle = '#173b59'; ctx.fillRect(0, 0, W, 18); }
-      if (op.type === 'divider') { ctx.fillStyle = '#d9e3eb'; ctx.fillRect(M, op.y, W - 2 * M, 2); }
-      if (op.type === 'headingBand') {
-        ctx.fillStyle = '#e9f3f6'; ctx.fillRect(M, op.y, W - 2 * M, op.h);
-        ctx.fillStyle = '#3f8194'; ctx.fillRect(M, op.y, 7, op.h);
+    // 分頁：文字只在行與行之間換頁，圖片不會被切開，標題不會落單
+    const limit = PAGE_H - FOOT, pages = [];
+    let page = [], y = TOP, bottom = TOP;
+    const flush = () => { pages.push({ items: page, end: bottom }); page = []; y = bottom = TOP; };
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      if (block.space) { if (page.length) y += block.h; continue; }
+      let need = block.h;
+      if (block.keep) {
+        let j = i + 1;
+        while (j < blocks.length && (blocks[j].keep || blocks[j].space)) need += blocks[j++].h;
+        if (j < blocks.length) need += blocks[j].h;
       }
-      if (op.type === 'text') { ctx.font = op.font; ctx.fillStyle = op.color; ctx.fillText(op.value, op.x, op.y); }
-      if (op.type === 'image') {
-        ctx.fillStyle = '#f5f8fa'; ctx.fillRect(op.boxX, op.boxY, op.boxW, op.boxH);
-        ctx.drawImage(op.image, op.x, op.y, op.w, op.h);
-      }
+      // 結尾的話不單獨落在最後一頁：最後一個區塊會陪它一起換頁
+      if (i < tailStart) { let j = i + 1; while (j < tailStart && blocks[j].space) j++; if (j === tailStart) need += tailHeight; }
+      if (page.length && y + need > limit) flush();
+      page.push({ block, y }); y += block.h; bottom = y;
     }
+    if (page.length) flush();
+    return { pages, failed };
+  }
+  function renderPage(page, index, total, fixedHeight) {
+    const height = fixedHeight ? PAGE_H : Math.ceil(page.end + FOOT);
+    const canvas = document.createElement('canvas');
+    canvas.width = W * SCALE; canvas.height = height * SCALE;
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) throw new Error('這個瀏覽器無法產生圖片。');
+    ctx.scale(SCALE, SCALE);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, height);
+    ctx.imageSmoothingQuality = 'high'; ctx.textBaseline = 'top';
+    for (const { block, y } of page.items) block.draw(ctx, y);
+    const fy = height - FOOT + 30;
+    ctx.fillStyle = C.line; ctx.fillRect(M, fy, W - 2 * M, 2);
+    ctx.font = F.small; ctx.fillStyle = C.sub;
+    ctx.fillText('繪圖委託需求', M, fy + 18);
+    const pageLabel = `${index + 1} / ${total}`, credit = '畫委託需求整理所';
+    ctx.fillText(pageLabel, (W - ctx.measureText(pageLabel).width) / 2, fy + 18);
+    ctx.fillText(credit, W - M - ctx.measureText(credit).width, fy + 18);
     return canvas;
   }
-  function pageSlices(layout, cuts = [], pageH = PAGE_H) {
-    const { height, strongBreaks, lineEnds, imageRegions } = layout;
-    const pages = [];
-    for (let top = 0; top < height;) {
-      const target = Math.min(top + pageH, height);
-      const manual = cuts.find(y => y > top && y <= target);
-      let end;
-      if (manual) end = manual;
-      else if (target === height) end = height;
-      else {
-        // 優先在段落分隔線／圖片之間換頁；找不到時改在文字行之間換頁，避免把字切成兩半
-        end = strongBreaks.filter(y => y >= top + pageH * 0.59 && y <= target - 25).pop()
-          ?? lineEnds.filter(y => y >= top + 200 && y <= target).pop()
-          ?? target;
-        const crossing = imageRegions.find(r => r.top < end && r.end > end && r.top >= top);
-        if (crossing) end = crossing.top > top + 50 ? crossing.top : Math.min(crossing.end, target);
-      }
-      if (end <= top) end = target;
-      pages.push({ top, end, manual: Boolean(manual) });
-      top = end;
-    }
-    return pages;
-  }
-  function snapCut(layout, value) {
-    const candidates = [...layout.strongBreaks, ...layout.lineEnds];
-    let best = value, distance = 40;
-    for (const y of candidates) { const d = Math.abs(y - value); if (d < distance) { distance = d; best = y; } }
-    return best;
-  }
+  const jpegFrom = canvas => new Promise((resolve, reject) =>
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('無法產生檔案，請減少圖片後再試。')), 'image/jpeg', 0.92));
 
-  /* ---------- 檔案輸出 ---------- */
-  function blobFrom(canvas, type, quality) {
-    return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('無法產生檔案，可能是內容太大，請縮小部分圖片後再試。')), type, quality));
-  }
-  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-  async function deliverFiles(files) {
-    if (navigator.share && navigator.canShare?.({ files })) {
-      try { await navigator.share({ files, title: '繪圖委託需求' }); return 'shared'; }
-      catch (error) { if (error.name === 'AbortError') return 'cancelled'; }
-    }
-    for (const file of files) {
-      const url = URL.createObjectURL(file), link = document.createElement('a');
-      link.href = url; link.download = file.name; document.body.append(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30000);
-      if (files.length > 1) await pause(450);
-    }
-    return 'downloaded';
-  }
-  window.commissionDeliver = deliverFiles;
-  function pdfFromImages(images) {
-    const encoder = new TextEncoder(), chunks = []; let length = 0;
-    const offsets = [0];
-    function push(bytes) { const data = typeof bytes === 'string' ? encoder.encode(bytes) : bytes; chunks.push(data); length += data.length; }
-    function object(id, body) { offsets[id] = length; push(`${id} 0 obj\n`); body(); push('\nendobj\n'); }
+  async function pdfFromJpegs(pages) {
+    const encoder = new TextEncoder(), chunks = [], offsets = [0]; let length = 0;
+    const push = data => { const bytes = typeof data === 'string' ? encoder.encode(data) : data; chunks.push(bytes); length += bytes.length; };
+    const object = (id, body) => { offsets[id] = length; push(`${id} 0 obj\n`); body(); push('\nendobj\n'); };
     push(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a, 0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));
-    const kids = images.map((_, i) => `${3 + i * 3} 0 R`).join(' ');
     object(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
-    object(2, () => push(`<< /Type /Pages /Kids [${kids}] /Count ${images.length} >>`));
-    images.forEach(({ bytes, compressed, width, height }, i) => {
+    object(2, () => push(`<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${pages.length} >>`));
+    for (let i = 0; i < pages.length; i++) {
+      const { blob, width, height } = pages[i], bytes = new Uint8Array(await blob.arrayBuffer());
       const page = 3 + i * 3, image = page + 1, content = page + 2;
       object(page, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${image} 0 R >> >> /Contents ${content} 0 R >>`));
-      object(image, () => { push(`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 ${compressed ? '/Filter /FlateDecode ' : ''}/Length ${bytes.length} >>\nstream\n`); push(bytes); push('\nendstream'); });
+      object(image, () => { push(`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\nstream\n`); push(bytes); push('\nendstream'); });
       const commands = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
-      object(content, () => push(`<< /Length ${encoder.encode(commands).length} >>\nstream\n${commands}\nendstream`));
-    });
+      object(content, () => push(`<< /Length ${commands.length} >>\nstream\n${commands}\nendstream`));
+    }
     const xref = length;
     push(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);
     for (let i = 1; i < offsets.length; i++) push(`${String(offsets[i]).padStart(10, '0')} 00000 n \n`);
     push(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
     return new Blob(chunks, { type: 'application/pdf' });
   }
-  async function losslessPageImage(page) {
-    const { width, height } = page;
-    const rgba = page.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, width, height).data;
-    const rgb = new Uint8Array(width * height * 3);
-    for (let i = 0, j = 0; i < rgba.length; i += 4) {
-      rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2];
+
+  /* ================= 傳送：下載與分享 ================= */
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const canShareFiles = files => Boolean(navigator.share && navigator.canShare?.({ files }));
+  async function downloadFiles(files) {
+    for (const file of files) {
+      const url = URL.createObjectURL(file), link = document.createElement('a');
+      link.href = url; link.download = file.name; document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      if (files.length > 1) await pause(450);
     }
-    if (typeof CompressionStream === 'function') {
-      try {
-        const stream = new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'));
-        return { bytes: new Uint8Array(await new Response(stream).arrayBuffer()), compressed: true, width, height };
-      } catch { /* Fall back to uncompressed, still lossless pixels. */ }
-    }
-    return { bytes: rgb, compressed: false, width, height };
   }
-  function skippedNote(layout) {
-    return layout.failed ? ` 有 ${layout.failed} 張圖片此瀏覽器無法讀取（例如部分 HEIC），已略過。` : '';
+  // 備份檔也使用這個函式（draft.js）
+  window.commissionDeliver = async files => {
+    if (canShareFiles(files)) {
+      try { await navigator.share({ files }); return 'shared'; }
+      catch (error) { if (error.name === 'AbortError') return 'cancelled'; }
+    }
+    await downloadFiles(files); return 'downloaded';
+  };
+  function baseName() {
+    const first = [...characters.querySelectorAll('[data-key="name"]')].map(x => x.value.trim()).find(Boolean);
+    return '委託需求' + (first ? '-' + first.replace(/[\\/:*?"<>|\s]+/g, '') : '');
   }
 
-  /* ---------- PDF 預覽 ---------- */
-  function showPdfImageControls() {
-    pdfImageList.replaceChildren();
-    const cards = [...characters.children, otherReferences];
-    cards.forEach((card, cardIndex) => {
-      (attachments.get(card) || []).forEach((item, imageIndex) => {
-        const control = document.createElement('div'); control.className = 'pdf-image-item';
-        const image = document.createElement('img'); image.src = item.url; image.alt = '';
-        const label = document.createElement('label');
-        const id = `pdf-image-size-${cardIndex}-${imageIndex}`; label.htmlFor = id;
-        label.title = item.file.name;
-        const name = document.createElement('span'); name.className = 'pdf-image-name';
-        name.textContent = `${card === otherReferences ? '其他參考圖' : `角色 ${cardIndex + 1}`} · ${item.file.name}`;
-        label.append(name);
-        const value = document.createElement('output'); value.textContent = `${item.size}%`; label.append(value);
-        const slider = document.createElement('input'); slider.type = 'range'; slider.id = id;
-        slider.min = '20'; slider.max = '100'; slider.step = '5'; slider.value = String(item.size);
-        slider.setAttribute('aria-label', `${item.file.name} 的 PDF 輸出大小`);
-        slider.addEventListener('input', () => { value.textContent = `${slider.value}%`; });
-        slider.addEventListener('change', () => {
-          item.size = Number(slider.value);
-          showImages(card);
-          imagesChanged();
-          schedulePdfRebuild();
-        });
-        control.append(image, label, slider); pdfImageList.append(control);
-      });
-    });
-    pdfImagePanel.hidden = !pdfImageList.children.length;
+  let resultFiles = [], resultUrls = [];
+  function openResult(title, note, files, previews) {
+    resultFiles = files;
+    resultUrls.forEach(URL.revokeObjectURL);
+    resultUrls = previews.map(blob => URL.createObjectURL(blob));
+    resultPages.replaceChildren(...resultUrls.map((url, i) => {
+      const image = document.createElement('img'); image.src = url; image.alt = `第 ${i + 1} 頁預覽`; return image;
+    }));
+    resultTitle.textContent = title; resultNote.textContent = note;
+    resultShare.hidden = !canShareFiles(files);
+    resultDownload.textContent = resultShare.hidden ? '下載' : '下載到裝置';
+    resultDownload.className = resultShare.hidden ? 'big' : 'ghost';
+    dialog.showModal(); resultPages.scrollTop = 0;
   }
-  function schedulePdfRebuild() {
-    const revision = ++pdfRevision;
-    clearTimeout(pdfResizeTimer);
-    downloadPdf.disabled = true;
-    pdfStatus.textContent = '正在依圖片大小重新排版…';
-    pdfResizeTimer = setTimeout(async () => {
-      pdfResizeTimer = null;
-      try {
-        const next = await buildLayout();
-        if (revision !== pdfRevision || !pdfDialog.open) return;
-        const hadManualCuts = manualCuts.length > 0;
-        pdfLayout = next; manualCuts = [];
-        renderPages();
-        if (hadManualCuts) pdfStatus.textContent += ' · 圖片大小已更新，請重新設定手動分頁';
-        downloadPdf.disabled = false;
-      } catch (error) {
-        if (revision === pdfRevision && pdfDialog.open) pdfStatus.textContent = error.message || '無法更新預覽，請調整圖片大小後再試。';
-      }
-    }, 150);
-  }
-  function renderPages() {
-    if (!pdfLayout) return;
-    const scroll = pdfPages.scrollTop;
-    pdfPages.replaceChildren();
-    const layout = pdfLayout, { height } = layout;
-    const slices = pageSlices(layout, manualCuts);
-    slices.forEach((slice, index) => {
-      const card = document.createElement('section'); card.className = 'pdf-card';
-      const heading = document.createElement('h3'); heading.textContent = `第 ${index + 1} 頁`;
-      const sheet = renderRegion(layout, slice.top, slice.end, PREVIEW_SCALE, PAGE_H); sheet.className = 'pdf-sheet';
-      sheet.setAttribute('role', 'img'); sheet.setAttribute('aria-label', `PDF 第 ${index + 1} 頁內容預覽`);
-      card.append(heading, sheet);
-      if (slice.end < height || slice.end - slice.top > 550) {
-        const isLast = slice.end === height;
-        const control = document.createElement('div'); control.className = 'page-control';
-        const label = document.createElement('label');
-        const id = `page-cut-${index}`; label.htmlFor = id;
-        label.textContent = isLast ? `在第 ${index + 1} 頁新增分頁` : `第 ${index + 1} 頁的頁尾位置`;
-        const slider = document.createElement('input');
-        slider.type = 'range'; slider.id = id;
-        slider.min = String(slice.top + 250);
-        slider.max = String(isLast ? slice.end - 250 : Math.min(slice.top + PAGE_H, height - 1));
-        slider.step = '1'; slider.value = String(isLast ? Math.max(slice.top + 250, slice.end - 450) : slice.end);
-        const help = document.createElement('p'); help.className = 'page-help';
-        help.textContent = isLast ? '選好位置後按「新增分頁」，內容會移到下一頁。' : '向左移動會提早換頁；位置會自動對齊到最近的行距，不會切到文字。';
-        const apply = () => {
-          const next = snapCut(layout, Number(slider.value));
-          manualCuts = manualCuts.filter(y => y <= slice.top);
-          if (next > slice.top) manualCuts.push(next);
-          renderPages();
-        };
-        if (isLast) {
-          const add = document.createElement('button'); add.type = 'button'; add.className = 'secondary';
-          add.textContent = '新增分頁'; add.addEventListener('click', apply);
-          control.append(label, slider, help, add);
-        } else {
-          slider.addEventListener('change', apply);
-          control.append(label, slider, help);
-        }
-        card.append(control);
-      }
-      pdfPages.append(card);
-    });
-    pdfPages.scrollTop = scroll;
-    pdfStatus.textContent = `預覽共 ${slices.length} 頁 · A4 直式${manualCuts.length ? ` · 已調整 ${manualCuts.length} 處分頁` : ' · 自動分頁'}${skippedNote(layout)}`;
-  }
-
-  /* ---------- 按鈕 ---------- */
-  async function exportPng() {
-    pngButton.disabled = true; say('正在排版與產生長圖片…');
+  async function make(mode, button) {
+    const original = button.querySelector('b').textContent;
+    button.disabled = true; button.querySelector('b').textContent = '製作中…'; say('');
     try {
-      const layout = await buildLayout();
-      const parts = layout.height * W <= PNG_MAX_AREA
-        ? [{ top: 0, end: layout.height }]
-        : pageSlices(layout, [], PNG_PART_H);
-      const files = [];
-      for (let i = 0; i < parts.length; i++) {
-        const { top, end } = parts[i];
-        const scale = Math.max(1, Math.min(2, Math.sqrt(PNG_MAX_AREA / (W * (end - top)))));
-        const canvas = renderRegion(layout, top, end, scale);
-        const name = parts.length > 1 ? `繪圖委託需求-${i + 1}.png` : '繪圖委託需求.png';
-        files.push(new File([await blobFrom(canvas, 'image/png')], name, { type: 'image/png' }));
+      const { pages, failed } = await buildPages();
+      const rendered = [];
+      for (let i = 0; i < pages.length; i++) {
+        const canvas = renderPage(pages[i], i, pages.length, mode === 'pdf');
+        rendered.push({ blob: await jpegFrom(canvas), width: canvas.width, height: canvas.height });
         canvas.width = canvas.height = 0;
       }
-      const result = await deliverFiles(files);
-      if (result === 'cancelled') say('已取消分享。');
-      else say((parts.length > 1 ? `內容較長，已分成 ${parts.length} 張長圖片；` : '長圖片已產生；') + '請確認圖片與文字內容。' + skippedNote(layout));
-    } catch (error) { say(error.message || '匯出失敗，請再試一次。'); }
-    finally { pngButton.disabled = false; }
+      const base = baseName(), skipped = failed ? `（有 ${failed} 張圖片這台裝置無法讀取，已略過）` : '';
+      const files = mode === 'pdf'
+        ? [new File([await pdfFromJpegs(rendered)], `${base}.pdf`, { type: 'application/pdf' })]
+        : rendered.map((page, i) => new File([page.blob], rendered.length > 1 ? `${base}-${i + 1}.jpg` : `${base}.jpg`, { type: 'image/jpeg' }));
+      const title = mode === 'pdf' ? 'PDF 做好了' : '圖片做好了';
+      const note = (mode === 'pdf' ? `一份 PDF，共 ${rendered.length} 頁。` : rendered.length > 1 ? `共 ${rendered.length} 張圖片，請依順序傳送。` : '一張圖片。') + skipped;
+      if (typeof dialog.showModal !== 'function') { await downloadFiles(files); say('已下載。' + skipped); return; }
+      openResult(title, note, files, rendered.map(page => page.blob));
+    } catch (error) { say(error.message || '製作失敗，請再試一次。'); }
+    finally { button.disabled = false; button.querySelector('b').textContent = original; }
   }
-  async function openPdfPreview() {
-    if (typeof pdfDialog.showModal !== 'function') { say('此瀏覽器版本較舊，無法開啟 PDF 預覽，請改用「產生長圖片 PNG」。'); return; }
-    pdfButton.disabled = true; say('正在產生 PDF 分頁預覽…');
-    try {
-      pdfLayout = await buildLayout(); manualCuts = [];
-      showPdfImageControls();
-      pdfDialog.showModal();
-      renderPages();
-      downloadPdf.disabled = false;
-      say('可以在預覽中調整圖片大小與分頁位置。');
-    } catch (error) { say(error.message || '無法開啟 PDF 預覽。'); }
-    finally { pdfButton.disabled = false; }
-  }
-  async function exportPdf() {
-    if (!pdfLayout) return;
-    const layout = pdfLayout;
-    pdfImageList.querySelectorAll('input').forEach(input => { input.disabled = true; });
-    downloadPdf.disabled = true;
-    try {
-      const slices = pageSlices(layout, manualCuts);
-      const pages = [];
-      for (let i = 0; i < slices.length; i++) {
-        pdfStatus.textContent = `正在輸出 PDF（${i + 1} / ${slices.length} 頁）…`;
-        const page = renderRegion(layout, slices[i].top, slices[i].end, PDF_SCALE, PAGE_H);
-        pages.push(await losslessPageImage(page));
-        page.width = page.height = 0;
-      }
-      const result = await deliverFiles([new File([pdfFromImages(pages)], '繪圖委託需求.pdf', { type: 'application/pdf' })]);
-      pdfStatus.textContent = result === 'cancelled' ? '已取消分享。' : 'PDF 已產生；可繼續調整或關閉預覽。';
-    } catch (error) { pdfStatus.textContent = error.message || 'PDF 輸出失敗，請再試一次。'; }
-    finally {
-      pdfImageList.querySelectorAll('input').forEach(input => { input.disabled = false; });
-      downloadPdf.disabled = false;
-    }
-  }
-  pngButton.addEventListener('click', exportPng);
-  pdfButton.addEventListener('click', openPdfPreview);
-  downloadPdf.addEventListener('click', exportPdf);
-  document.getElementById('resetPages').addEventListener('click', () => { manualCuts = []; renderPages(); });
-  document.getElementById('closePdf').addEventListener('click', () => pdfDialog.close());
-  pdfDialog.addEventListener('click', event => { if (event.target === pdfDialog) pdfDialog.close(); });
-  pdfDialog.addEventListener('close', () => {
-    pdfRevision++; clearTimeout(pdfResizeTimer); pdfResizeTimer = null;
-    pdfLayout = null; manualCuts = []; pdfPages.replaceChildren(); pdfImageList.replaceChildren();
+  resultShare.addEventListener('click', () => {
+    // 必須在點擊當下直接呼叫，iPhone 才會開啟分享選單
+    navigator.share({ files: resultFiles }).then(() => { resultNote.textContent = '已開啟分享選單。'; },
+      error => { if (error.name !== 'AbortError') resultNote.textContent = '無法分享，請改用下載。'; });
   });
+  resultDownload.addEventListener('click', async () => {
+    await downloadFiles(resultFiles);
+    resultNote.textContent = resultFiles.length > 1 ? `已下載 ${resultFiles.length} 個檔案。` : '已下載。';
+  });
+  $('closeResult').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => { resultUrls.forEach(URL.revokeObjectURL); resultUrls = []; resultFiles = []; resultPages.replaceChildren(); });
+
+  /* ---------- 原圖：手機直接分享，電腦打包成 ZIP ---------- */
+  const crcTable = Array.from({ length: 256 }, (_, i) => { let c = i; for (let j = 0; j < 8; j++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  function crc(bytes) { let c = 0xffffffff; for (const b of bytes) c = crcTable[(c ^ b) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function zip(entries) {
+    const encoder = new TextEncoder(), parts = [], central = []; let offset = 0;
+    for (const entry of entries) {
+      const name = encoder.encode(entry.name), data = entry.data, check = crc(data);
+      const local = new Uint8Array(30 + name.length), v = new DataView(local.buffer);
+      v.setUint32(0, 0x04034b50, true); v.setUint16(4, 20, true); v.setUint16(6, 0x800, true);
+      v.setUint32(14, check, true); v.setUint32(18, data.length, true); v.setUint32(22, data.length, true);
+      v.setUint16(26, name.length, true); local.set(name, 30); parts.push(local, data);
+      const item = new Uint8Array(46 + name.length), cv = new DataView(item.buffer);
+      cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x800, true);
+      cv.setUint32(16, check, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true);
+      cv.setUint16(28, name.length, true); cv.setUint32(42, offset, true); item.set(name, 46);
+      central.push(item); offset += local.length + data.length;
+    }
+    const end = new Uint8Array(22), v = new DataView(end.buffer);
+    v.setUint32(0, 0x06054b50, true); v.setUint16(8, entries.length, true); v.setUint16(10, entries.length, true);
+    v.setUint32(12, central.reduce((sum, part) => sum + part.length, 0), true); v.setUint32(16, offset, true);
+    return new Blob([...parts, ...central, end], { type: 'application/zip' });
+  }
+  function namedOriginals() {
+    const clean = value => value.replace(/[\\/:*?"<>|\s]+/g, '');
+    return groups().flatMap((card, index) => {
+      const name = card === other ? '其他參考圖' : `角色${index + 1}` + (clean(card.querySelector('[data-key="name"]').value) ? '-' + clean(card.querySelector('[data-key="name"]').value) : '');
+      return itemsOf(card).map(({ file }, i) => {
+        const ext = (file.name.match(/\.[A-Za-z0-9]+$/) || ['.png'])[0];
+        return new File([file], `${name}-${i + 1}${ext}`, { type: file.type, lastModified: file.lastModified });
+      });
+    });
+  }
+  $('shareOriginals').addEventListener('click', async event => {
+    const { text } = window.getCommissionExportData();
+    const files = namedOriginals();
+    if (!files.length) { say('還沒有加入參考圖，直接按「複製文字」就可以了。'); return; }
+    if (matchMedia('(pointer: coarse)').matches && canShareFiles(files)) {
+      if (text) navigator.clipboard?.writeText(text).catch(() => {});
+      navigator.share({ files, text }).then(() => say('已開啟分享選單；文字也已複製，可以在傳送圖片後貼上。'),
+        error => { if (error.name !== 'AbortError') say('無法分享，請再試一次。'); });
+      return;
+    }
+    const button = event.currentTarget; button.disabled = true;
+    try {
+      const entries = [];
+      if (text) entries.push({ name: '委託需求.txt', data: new TextEncoder().encode('﻿' + text) });
+      for (const file of files) entries.push({ name: file.name, data: new Uint8Array(await file.arrayBuffer()) });
+      await downloadFiles([new File([zip(entries)], `${baseName()}-原圖.zip`, { type: 'application/zip' })]);
+      say(`已下載 ZIP：${text ? '文字檔和 ' : ''}${files.length} 張原圖。`);
+    } catch { say('打包失敗，請再試一次。'); }
+    finally { button.disabled = false; }
+  });
+  $('makeImages').addEventListener('click', event => make('images', event.currentTarget));
+  $('makePdf').addEventListener('click', event => make('pdf', event.currentTarget));
 })();
