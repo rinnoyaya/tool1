@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data: blob:; connect-src 'self' https:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://player.bilibili.com; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<script>/* 不能被別的網站用 iframe 嵌入（防止有人騙你在他的網站上按到按鈕）：被嵌入時整頁不顯示 */if(window.top!==window.self){document.documentElement.style.display="none";addEventListener("DOMContentLoaded",()=>{document.body.innerHTML='<p style="font:16px sans-serif;padding:20px">這個頁面不能嵌在其他網站裡。<a href="'+location.href.replace(/"/g,"")+'" target="_blank" rel="noopener">在新分頁開啟</a></p>';document.documentElement.style.display="";});}</script>
+
 <title>寫作小幫手</title>
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png?v=2">
 <link rel="apple-touch-icon" href="icon.png?v=2">
@@ -45,15 +49,28 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);line-height:1.7;-webkit-font-smoothing:antialiased}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 :focus-visible{outline:2px solid var(--lamp);outline-offset:2px;border-radius:4px}
 img,svg{max-width:100%;display:block}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.3;text-wrap:balance;margin:0}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.3;text-wrap:balance;margin:0;overflow-wrap:anywhere}
 
 .demo{background:var(--lamp);color:#1c1606;font-size:13px;text-align:center;padding:6px 16px}
-header{border-bottom:1px solid var(--line);background:var(--card)}
+header{border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:6;transition:transform .25s ease}
+header.hide{transform:translateY(-100%)}
+.skip{position:absolute;left:8px;top:-60px;z-index:50;background:var(--ink);color:var(--paper);border:0;border-radius:8px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer}
+.skip:focus{top:8px}
+main:focus{outline:none}
+#readBar{position:fixed;left:0;top:0;height:3px;width:100%;transform-origin:0 50%;transform:scaleX(0);background:var(--lamp);z-index:7;pointer-events:none;opacity:0;transition:opacity .2s}
+#readBar.on{opacity:1}
+#toTop{position:fixed;right:16px;bottom:16px;z-index:7;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:18px;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility 0s linear .2s}
+#toTop.on{opacity:.92;visibility:visible;transform:none;transition:opacity .2s,transform .2s}
+body:has(.owner:not([hidden])) #toTop{bottom:70px}
+html.modal-lock,html.modal-lock body{overflow:hidden}
+.img-miss{width:100%;height:100%;min-height:90px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--muted);font-size:13px;background:var(--paper)}
+.utxt{min-width:0}
 .bar{max-width:1040px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .logo{font-family:var(--f-display);font-size:22px;color:var(--ink);display:flex;align-items:center;gap:8px}
 .logo:hover{text-decoration:none}
@@ -133,6 +150,10 @@ main{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
 :root.ind-all .prose p .ln,:root.ind-all .notebody p .ln{text-indent:2em}
 :root.ind-first .prose p .ln:first-child,:root.ind-first .notebody p .ln:first-child{text-indent:2em}
 .rich p .ln .inline-fig{text-indent:0}
+/* 單篇的「段落縮排」設定，優先於網站的整體設定 */
+.pi-none p .ln{text-indent:0!important}
+.pi-all p .ln{text-indent:2em!important}
+.pi-first p .ln{text-indent:0!important}.pi-first p .ln:first-child{text-indent:2em!important}
 .prose figure{margin:2em 0}
 .prose figure .art{border-radius:10px;overflow:hidden;aspect-ratio:16/10}
 .prose figcaption{font-family:var(--f-body);font-size:13px;color:var(--muted);text-align:center;margin-top:8px}
@@ -157,7 +178,8 @@ main{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
 
 .lb{position:fixed;inset:0;background:rgba(8,10,18,.86);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
 .lb.on{display:flex}
-.lb-in{background:var(--card);border-radius:12px;max-width:1000px;width:100%;max-height:100%;overflow:auto}
+.lb-in{background:var(--card);border-radius:12px;max-width:1000px;width:100%;max-height:100%;overflow:auto;overscroll-behavior:contain}
+#lbArt.full img{max-height:max(240px,calc(100dvh - 230px))}
 .lb-in .art{aspect-ratio:4/3}
 /* 縮圖：裁切成整齊的格子，優先保留上半部 */
 .art img{width:100%;height:100%;object-fit:cover;object-position:center top}
@@ -186,21 +208,6 @@ main{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
 .about{max-width:640px}
 .about p{margin:0 0 1em}
 
-/* 後台示意 */
-.cms{display:grid;grid-template-columns:200px 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
-.cms aside{background:var(--paper);border-right:1px solid var(--line);padding:16px;font-size:14px}
-.cms aside b{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px;letter-spacing:.06em}
-.cms aside b:first-child{margin-top:0}
-.cms aside div{padding:6px 10px;border-radius:6px;color:var(--muted)}
-.cms aside div.on{background:var(--card);color:var(--ink);font-weight:500}
-.cms form{padding:20px;display:grid;gap:14px}
-.cms label{display:grid;gap:4px;font-size:14px;color:var(--muted)}
-.cms input,.cms select,.cms textarea{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-.cms textarea{min-height:160px;font-family:var(--f-read);line-height:1.8}
-.cms .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.drop{border:1.5px dashed var(--line);border-radius:8px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
-.saved{color:var(--accent);font-size:14px;min-height:1.5em}
-
 /* 委託圖 */
 .stats{display:flex;gap:28px;flex-wrap:wrap;margin:0 0 20px;padding:14px 18px;background:var(--card);border:1px solid var(--line);border-radius:12px}
 .stats div{display:grid}
@@ -221,9 +228,6 @@ main{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
 .ctype{position:absolute;top:8px;left:8px;background:rgba(10,12,20,.7);color:#fff;font-size:12px;padding:1px 8px;border-radius:99px}
 .piece .artwrap{position:relative}
 .piece .who{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
-.artists{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.artists li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
-.artists small{color:var(--muted)}
 
 /* 角色故事 */
 .slist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
@@ -288,26 +292,7 @@ body:has(.owner:not([hidden])) footer{padding-bottom:76px}
 .wm-on .art:has(img)::after,.wm-on #heroArt:has(img)::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:var(--wm);background-repeat:repeat;z-index:1}
 .wm-on .blurred::after{display:none}
 /* 成人內容 */
-.rss-btn{font:inherit;font-size:inherit;color:var(--accent);background:none;border:0;padding:4px 0;cursor:pointer}
 .new-badge{display:inline-block;font-family:var(--f-body);font-size:10.5px;font-weight:700;color:var(--card);background:var(--lamp);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:middle;line-height:1.7;letter-spacing:.04em}
-.chlist li.seen a>span{color:var(--muted)}
-.chlist li.seen a>span::after{content:"✓";margin-left:6px;font-size:12px;color:var(--muted)}
-.seen-mark{font-size:12px;color:var(--muted);margin-left:6px;font-weight:400}
-/* 繼續閱讀 */
-.continue{display:flex;align-items:center;gap:14px;margin:26px 0 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
-.continue:hover{text-decoration:none;border-color:var(--accent)}
-.continue .cv-ic{flex:none;width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--card);display:flex;align-items:center;justify-content:center;font-size:16px}
-.continue .cv-t{flex:1;min-width:0}
-.continue small{display:block;color:var(--muted);font-size:12.5px}
-.continue b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.continue .cv-bar{height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
-.continue .cv-bar i{display:block;height:100%;background:var(--accent)}
-.continue .cv-go{flex:none;color:var(--accent);font-size:14px;white-space:nowrap}
-.series-go{display:inline-block;margin:4px 0 10px;font-size:14px}
-.resume{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 18px;padding:10px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-family:var(--f-body);font-size:14px;color:var(--muted)}
-.resume button{font:inherit;font-size:14px;border:0;border-radius:999px;padding:6px 14px;cursor:pointer}
-.resume .rs-go{background:var(--accent);color:var(--card)}
-.resume .rs-x{background:transparent;color:var(--muted);padding:6px 8px;margin-left:auto}
 /* 名詞百科 */
 .gl{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-indent:0;border-bottom:1.5px dotted var(--accent);line-height:inherit;letter-spacing:inherit}
 .gl:hover,.gl:focus-visible{color:var(--accent);outline:none}
@@ -496,7 +481,39 @@ footer{border-top:1px solid var(--line);color:var(--muted);font-size:13px;text-a
   nav::-webkit-scrollbar{display:none}
   nav a{white-space:nowrap;flex:none}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* 電腦（滑鼠）：卡片浮起、鍵盤換篇提示 */
+@media (hover:hover) and (pointer:fine){
+  .piece,.scard,.gcard,.tcard,.char,.ncard{transition:border-color .15s,transform .15s,box-shadow .15s}
+  .piece:hover,.scard:hover,.gcard:hover,.tcard:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.12)}
+  .pager a:not(.next) small::before{content:"← "}
+  .pager a.next small::after{content:" →"}
+  .chlist li a{padding-left:6px;padding-right:6px;border-radius:6px}
+  .chlist li a:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+}
+/* 寬螢幕 */
+@media (min-width:1200px){
+  .bar,main{max-width:1120px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px}
+}
+/* 手機 */
+@media (max-width:720px){
+  main{padding:22px 16px 56px}
+  nav{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 28px),transparent)}
+  nav a{padding:8px 10px}
+  .sec{margin:32px 0 12px}.sec h2{font-size:21px}
+  .series{padding:16px;gap:16px}
+  .stats{gap:18px 24px;padding:12px 16px}
+  .lb{padding:10px}
+  .lb-body{padding:14px 16px 16px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+  .piece div.cap{padding:8px 10px}
+  .rtools{margin-bottom:20px}
+  .prose{line-height:1.95;letter-spacing:.01em}
+  .site-toast{bottom:calc(20px + env(safe-area-inset-bottom))}
+}
+@media (max-width:400px){.char{grid-template-columns:64px 1fr;padding:14px;gap:12px}.char .art{width:64px;height:64px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media print{header,footer,.owner,#toTop,#readBar,.rtools .share,.pager,[data-fs]{display:none!important}body{background:#fff;color:#000}main{max-width:none;padding:0}}
 
 
 /* ---------- 寫作小幫手 ---------- */
@@ -511,7 +528,7 @@ body{display:flex;flex-direction:column}
 .tb:hover{border-color:var(--accent)}
 .tb.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .sep{width:1px;background:var(--line);margin:4px 4px}
-.pop{position:absolute;top:100%;left:16px;z-index:5;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:12px;display:none;max-width:calc(100% - 32px)}
+.pop{position:fixed;top:104px;left:16px;z-index:25;max-height:calc(100dvh - 124px);overflow:auto;overscroll-behavior:contain;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:12px;display:none;max-width:calc(100% - 32px)}
 .pop.on{display:block}
 .pop .row{gap:6px}
 .sw{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;font-size:12px;color:#fff}
@@ -561,21 +578,30 @@ body{display:flex;flex-direction:column}
   #draftSel{max-width:28vw;font-size:13px}
   .pane-h .lbl{display:none}
   .pane-h{padding:6px 12px;justify-content:flex-start}
-  .pane-prev .pane-h > .row{width:100%;justify-content:space-between;flex-wrap:nowrap}
-  .pane-prev .tabs{order:-1}
-  #pvFont,#pvSize{font-size:13px;max-width:30vw}
+  /* 手機：第一行是「編輯／預覽」切換，第二行是三個預覽選項 */
+  .pane-prev .pane-h > .row{width:100%;flex-wrap:wrap;row-gap:6px}
+  .pane-prev .tabs{order:-1;flex:0 0 100%}
+  #pvFont,#pvSize,#pvInd{font-size:13px;flex:1 1 0;min-width:0;max-width:none}
   #src{padding:14px 16px 40vh}
   .foot{gap:6px;padding:8px 12px}
   .foot .btn{padding:8px 12px;font-size:14px}
   .foot .tbtn{font-size:13px;padding:6px 8px}
   .target .tbtn{margin-left:0}
 }
+@media (max-width:760px){
+  /* 工具列在手機上可以左右滑，彈出視窗改成固定在畫面上才不會被切掉 */
+  .pop{left:12px!important;right:12px;max-width:none;width:auto!important}
+  .foot .count{width:100%;margin:0;text-align:right;order:9}
+}
 @media (max-width:400px){
   .ed-top h1 span{display:none}
   #draftSel{max-width:36vw}
   #prev{padding:14px 16px 40vh}
-  .pop{position:fixed;top:104px;bottom:auto;left:12px;right:12px;max-width:none;width:auto!important;max-height:calc(100vh - 124px);overflow:auto}
 }
+.foot select{font:inherit;font-size:13px;color:var(--muted);background:none;border:1px solid var(--line);border-radius:6px;padding:5px 6px;max-width:150px}
+.savestate{font-size:12px;color:var(--muted);white-space:nowrap}
+.savestate.warn{color:var(--c-red);font-weight:600}
+.target.diff{background:color-mix(in srgb,var(--c-orange) 22%,var(--card))}
 </style>
 </head>
 <body>
@@ -615,7 +641,8 @@ body{display:flex;flex-direction:column}
   </div>
   <div class="pop" id="popLink" style="width:340px">
     <label for="lkText" style="margin-top:0;flex-direction:column;align-items:stretch;gap:4px">顯示文字（可留空，留空就直接顯示網址）<input id="lkText" class="lk" placeholder="例如：繪師的主頁"></label>
-    <label for="lkUrl" style="flex-direction:column;align-items:stretch;gap:4px">網址<input id="lkUrl" class="lk" placeholder="https://… 或站內位置，例如 #char-角色名"></label>
+    <label for="lkUrl" style="flex-direction:column;align-items:stretch;gap:4px">網址<input id="lkUrl" class="lk" placeholder="https://… 或從下面選站內頁面"></label>
+    <label for="lkSite" style="flex-direction:column;align-items:stretch;gap:4px">連到網站裡的頁面<select id="lkSite" class="lk"><option value="">（選一個角色、章節、名詞…）</option></select></label>
     <div class="row" style="margin-top:10px;gap:6px"><button class="tb on" type="button" id="lkOk">插入連結</button><button class="tb" type="button" id="lkCancel">取消</button></div>
     <div id="lkTip" style="font-size:12px;color:var(--muted);margin-top:8px">小技巧：先選取文字，再貼上網址，會自動變成連結。</div>
   </div>
@@ -626,7 +653,7 @@ body{display:flex;flex-direction:column}
     <div class="row" style="margin-top:10px;gap:6px"><button class="tb on" type="button" id="imOk">插入圖片</button><button class="tb" type="button" id="imCancel">取消</button><a class="tb" href="upload.html" target="_blank" rel="noopener" style="text-decoration:none">上傳新圖 ↗</a></div>
     <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:10px">
       <div class="row" style="gap:6px;margin-bottom:8px"><b style="font-size:13px;color:var(--muted);margin-right:auto">從圖庫選</b>
-        <select id="imFolder" class="lk" style="width:auto;padding:4px 6px"><option value="">全部</option><option>commissions</option><option>characters</option><option>gallery</option><option>chapters</option><option>site</option><option>misc</option></select>
+        <select id="imFolder" class="lk" style="width:auto;padding:4px 6px"><option value="">全部</option><option>commissions</option><option>characters</option><option>chapters</option><option>tools</option><option>glossary</option><option>gallery</option><option>site</option><option>misc</option></select>
         <input id="imSearch" class="lk" placeholder="搜尋檔名" style="width:120px;padding:4px 8px"></div>
       <div id="imLib" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;max-height:240px;overflow:auto"></div>
       <div id="imMsg" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
@@ -663,6 +690,7 @@ body{display:flex;flex-direction:column}
       <span class="row" style="gap:6px">
         <select id="pvFont" aria-label="整篇字型"><option value="">預設字型</option><option>明體</option><option>黑體</option><option>楷體</option></select>
         <select id="pvSize" aria-label="整篇大小"><option value="">預設大小</option><option>小</option><option>大</option><option>特大</option></select>
+        <select id="pvInd" aria-label="段落縮排" title="段落縮排"><option value="">縮排：跟隨網站</option><option value="不縮排">不縮排</option><option value="每一行都縮排">每行都縮排</option><option value="只有段落第一行縮排">段落首行縮排</option></select>
         <span class="tabs"><button class="tb" type="button" data-tab="edit">編輯</button><button class="tb on" type="button" data-tab="prev">預覽</button></span>
       </span></div>
     <div id="prev"><div class="prose rich"><div id="prevInner"></div></div></div>
@@ -671,10 +699,12 @@ body{display:flex;flex-direction:column}
 
 <div class="foot">
   <button class="btn" type="button" id="copyBtn">複製全部，貼到後台</button>
-  <a class="tbtn" id="cmsLink" href="https://app.pagescms.org/rinnoyaya/my-site/main/file/site" target="_blank" rel="noopener">開啟後台 ↗</a>
+  <a class="tbtn" id="cmsLink" href="https://app.pagescms.org/rinnoyaya/my-site/main" target="_blank" rel="noopener">開啟後台 ↗</a>
+  <select id="newSel" aria-label="在後台新增一筆內容"><option value="">＋ 在後台新增…</option></select>
   <a class="tbtn" href="upload.html">上傳圖片</a>
+  <button class="tbtn" type="button" id="dlBtn" title="把這份草稿存成文字檔備份">下載備份</button>
   <a class="tbtn" href="./" id="siteLink">回網站</a>
-  <span class="count" id="count">0 字</span>
+  <span class="count"><span class="savestate" id="saveState"></span>　<span id="count">0 字</span></span>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -709,7 +739,7 @@ body{display:flex;flex-direction:column}
       <tr><td><code>---</code></td><td>單獨一行：場景分隔</td></tr>
     </table>
     <p style="color:var(--muted)">空一行是新段落；同一段裡按 Enter 只會換行。草稿只存在這台裝置的瀏覽器，不會上傳，換裝置或清除瀏覽資料就會不見，寫好記得貼到後台。</p>
-    <p style="color:var(--muted)">快捷鍵（電腦）：Ctrl/⌘+B 粗體、Ctrl/⌘+I 淺色、Ctrl/⌘+K 連結。</p>
+    <p style="color:var(--muted)">快捷鍵（電腦）：Ctrl/⌘+B 粗體、Ctrl/⌘+I 淺色、Ctrl/⌘+K 連結。格式按鈕再按一次可以取消。</p>
     <h2 style="font-size:18px;margin:18px 0 6px">產生成人內容密碼代碼</h2>
     <p style="color:var(--muted);margin:0 0 8px">輸入你想設定的密碼，把產生的代碼貼到後台「網站設定 › 成人內容設定 › 密碼代碼」。代碼無法反推出密碼，所以真正的密碼不會出現在公開的檔案裡。</p>
     <div class="row" style="gap:6px;margin-bottom:6px"><input id="pwIn" type="text" autocomplete="off" placeholder="想設定的密碼" style="flex:1;min-width:0;font:inherit;font-size:14px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:7px;padding:7px 9px"><button class="tb" type="button" id="pwGen">產生代碼</button></div>
@@ -822,57 +852,127 @@ function blocks(text){
   });
 }
 /* 列表摘要用：去掉格式符號 */
-const FONT={"明體":"f-serif","黑體":"f-sans","楷體":"f-kai"},SIZE={"小":"sz-small","大":"sz-big","特大":"sz-huge"};
-const wrapCls=x=>[FONT[x.font],SIZE[x.size]].filter(Boolean).join(" ");
+const FONT={"明體":"f-serif","黑體":"f-sans","楷體":"f-kai"},SIZE={"小":"sz-small","大":"sz-big","特大":"sz-huge"},IND={"不縮排":"pi-none","每一行都縮排":"pi-all","只有段落第一行縮排":"pi-first"};
+const wrapCls=x=>[FONT[x.font],SIZE[x.size],IND[x.indent]].filter(Boolean).join(" ");
 const plain=t=>String(t||"").replace(/!\[[^\]]*\]\([^)]*\)/g,"").replace(/\{[^|{}\n]{1,40}\|([^{}]+?)\}/g,"$1").replace(/\[([^\]]+)\]\([^)]*\)/g,"$1").replace(/\*\*|~~|==|\*/g,"").replace(/^(##|>|-)\s/gm,"");
 const $=s=>document.querySelector(s);
 
 /* ---------- 寫作小幫手 ---------- */
 /* 後台網址：app.pagescms.org/帳號/repo/分支 */
 const CMS="https://app.pagescms.org/rinnoyaya/my-site/main";
-function cmsHref(key){const t=key?key.slice(0,key.indexOf(":")):"";const m={chapters:"chapters",side:"side",notes:"notes",characters:"characters",tools:"tools",glossary:"glossary"}[t];return CMS+(m?"/collection/"+m:"/file/site");}
+const CMS_DIR={chapters:"content/chapters",side:"content/side-stories",notes:"content/notes",characters:"content/characters",tools:"content/tools",glossary:"content/glossary"};
+const CMS_NEW=[["chapters","故事章節"],["side","角色故事"],["notes","文章"],["characters","角色"],["glossary","名詞"],["commissions","委託圖"],["tools","小工具"]];
+/* 有連到網站上某一篇的草稿 → 直接打開後台的那一篇；沒有 → 打開後台首頁 */
+function cmsHref(d){
+  if(!d||!d.src)return CMS;
+  const t=d.src.slice(0,d.src.indexOf(":"));
+  if(t==="site")return CMS+"/file/site-about";
+  if(!CMS_DIR[t])return CMS;
+  return d.file?CMS+"/collection/"+t+"/edit/"+encodeURIComponent(CMS_DIR[t]+"/"+d.file+".json"):CMS+"/collection/"+t;
+}
 const src=$("#src"),KEY="writer-drafts-v1";
 let store={cur:null,list:[]};
-try{store=JSON.parse(localStorage.getItem(KEY))||store;}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}}
+function readDisk(){try{const o=JSON.parse(localStorage.getItem(KEY));return o&&Array.isArray(o.list)?o:null;}catch(e){return null;}}
+store=readDisk()||store;store.list=store.list.filter(d=>d&&d.id&&typeof d.text==="string");
+/* 同時開兩個分頁時，別的分頁新增或改過的草稿要合併進來，不能整包蓋掉 */
+const DELETED=new Set();
+function mergeDisk(){
+  const disk=readDisk();if(!disk)return;
+  const mine=new Map(store.list.map(d=>[d.id,d]));
+  disk.list.forEach(d=>{if(!d||!d.id||typeof d.text!=="string"||DELETED.has(d.id))return;const m=mine.get(d.id);
+    if(!m)store.list.push(d);else if(d.id!==store.cur&&(d.updated||0)>(m.updated||0))Object.assign(m,d);});
+}
+let saveFail=false;
+function save(){
+  mergeDisk();
+  try{localStorage.setItem(KEY,JSON.stringify(store));saveFail=false;setSaveState();return true;}
+  catch(e){saveFail=true;setSaveState();toast("⚠ 草稿存不進這台裝置（瀏覽器空間不足）。請先把內容複製到別的地方，並刪掉用不到的草稿");return false;}
+}
+function setSaveState(){const el=document.getElementById("saveState");if(!el)return;const d=cur();
+  el.classList.toggle("warn",saveFail);
+  if(saveFail){el.textContent="⚠ 沒有存到";return;}
+  const t=new Date(d&&d.updated||Date.now());el.textContent="已自動儲存 "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");}
 function cur(){return store.list.find(d=>d.id===store.cur);}
-function draftName(d){if(d.label)return d.label.length>18?d.label.slice(0,17)+"…":d.label;const first=plain(d.text).trim().split("\n")[0]||"";return (first.slice(0,14)||"空白草稿")+(first.length>14?"…":"");}
+function draftName(d){
+  if(d.label){const t=d.label.split("｜")[1]||d.label;return "✎ "+(t.length>16?t.slice(0,15)+"…":t);}
+  const first=plain(d.text).trim().split("\n")[0]||"";return (first.slice(0,14)||"空白草稿")+(first.length>14?"…":"");}
 function fillSel(){
-  $("#draftSel").innerHTML=store.list.map(d=>`<option value="${d.id}"${d.id===store.cur?" selected":""}>${esc(draftName(d))}</option>`).join("");
+  $("#draftSel").innerHTML=[...store.list].sort((a,b)=>(b.updated||0)-(a.updated||0)).map(d=>`<option value="${d.id}"${d.id===store.cur?" selected":""}>${esc(draftName(d))}</option>`).join("");
 }
 function newDraft(text=""){
-  const d={id:"d"+Date.now(),text,updated:Date.now()};store.list.unshift(d);store.cur=d.id;save();fillSel();src.value=text;render();src.focus();
+  const d={id:"d"+Date.now()+Math.random().toString(36).slice(2,5),text,updated:Date.now()};store.list.unshift(d);store.cur=d.id;save();fillSel();src.value=text;pvSet(d);render();src.focus();
 }
-if(!store.list.length)newDraft("第一次聽見歌聲，是在她到北岬的第九個晚上。\n\n*不要看。不要回應。*她在心裡默念老周教的話。\n\n---\n\n天亮以後，她在日誌上寫下{藍,大|第一行}屬於自己的紀錄。");
-else{if(!cur())store.cur=store.list[0].id;src.value=cur().text;fillSel();}
+if(!store.list.length){const d={id:"d"+Date.now(),text:"",updated:Date.now()};store.list.push(d);store.cur=d.id;}
+else if(!cur())store.cur=[...store.list].sort((a,b)=>(b.updated||0)-(a.updated||0))[0].id;
+src.value=cur().text;fillSel();
+addEventListener("storage",e=>{if(e.key===KEY){mergeDisk();fillSel();}});
 
 function backHref(key){
   if(!key)return "./";const i=key.indexOf(":"),t=key.slice(0,i),id=encodeURIComponent(key.slice(i+1));
   return "./"+({chapters:"#read-",side:"#side-",notes:"#note-",characters:"#char-",tools:"#tool-",glossary:"#term-"}[t]?{chapters:"#read-",side:"#side-",notes:"#note-",characters:"#char-",tools:"#tool-",glossary:"#term-"}[t]+id:t==="site"?"#about":"");
 }
 function showTarget(){
-  const d=cur();$("#cmsLink").href=cmsHref(d&&d.src);$("#target").hidden=!(d&&d.src);$("#siteLink").href=backHref(d&&d.src);
-  $("#siteLink").textContent=d&&d.src?"回到這頁":"回網站";
-  if(d&&d.src)$("#targetText").innerHTML=`寫完要貼回：後台 › <b>${esc(d.label.split("｜")[0])}</b> › <b>${esc(d.label.split("｜")[1]||"")}</b> › ${esc(d.field||"內文")}`;
+  const d=cur(),linked=!!(d&&d.src);
+  $("#cmsLink").href=cmsHref(d);$("#cmsLink").textContent=linked&&(d.file||d.src.startsWith("site:"))?"開啟後台的這一篇 ↗":"開啟後台 ↗";
+  $("#newSel").hidden=linked;
+  $("#target").hidden=!linked;$("#siteLink").href=backHref(d&&d.src);
+  $("#siteLink").textContent=linked?"回到這頁":"回網站";
+  $("#target").classList.toggle("diff",!!(linked&&d.remoteDiff));
+  if(linked)$("#targetText").innerHTML=(d.remoteDiff?"⚠ 網站上的版本和這份草稿不一樣（可能在後台改過）。要用網站上的版本就按右邊的按鈕。<br>":"")+
+    `寫完要貼回：後台 › <b>${esc(d.label.split("｜")[0])}</b> › <b>${esc(d.label.split("｜")[1]||"")}</b> › ${esc(d.field||"內文")}`+styleHint(d);
 }
-let saveT;
-function render(){
-  showTarget();
+/* 預覽：內容很長時不要每打一個字就整篇重畫；手機上預覽沒打開時先不畫 */
+let saveT,pvT,pvDirty=true;
+const narrow=matchMedia("(max-width:760px)");
+const previewShown=()=>!(narrow.matches&&$("#work").dataset.tab==="edit");
+function renderPreview(){
+  if(!previewShown()){pvDirty=true;return;}
+  pvDirty=false;
   $("#prevInner").innerHTML=blocks(src.value).join("")||`<p class="soft">預覽會顯示在這裡。</p>`;
-  $("#prevInner").className=[FONT[$("#pvFont").value],SIZE[$("#pvSize").value]].filter(Boolean).join(" ");
-  const n=plain(src.value).replace(/\s/g,"").length;$("#count").textContent=n.toLocaleString()+" 字";
+  $("#prevInner").className=[FONT[$("#pvFont").value],SIZE[$("#pvSize").value],IND[$("#pvInd").value]].filter(Boolean).join(" ");
 }
-src.addEventListener("input",()=>{render();clearTimeout(saveT);saveT=setTimeout(()=>{const d=cur();if(d){d.text=src.value;d.updated=Date.now();save();fillSel();}},400);});
-$("#pvFont").onchange=render;$("#pvSize").onchange=render;
-$("#draftSel").onchange=e=>{const d=cur();if(d){d.text=src.value;}store.cur=e.target.value;save();src.value=cur().text;render();};
-$("#newDraft").onclick=()=>{const d=cur();if(d)d.text=src.value;newDraft();toast("開了一份新草稿");};
+function render(now){
+  showTarget();
+  const n=plain(src.value).replace(/\s/g,"").length;$("#count").textContent=n.toLocaleString()+" 字";
+  clearTimeout(pvT);
+  if(now===true||src.value.length<4000)renderPreview();else pvT=setTimeout(renderPreview,src.value.length>20000?350:150);
+}
+function flush(){clearTimeout(saveT);saveT=0;const d=cur();if(d&&d.text!==src.value){d.text=src.value;d.updated=Date.now();save();fillSel();}}
+src.addEventListener("input",()=>{render();clearTimeout(saveT);saveT=setTimeout(flush,400);});
+/* 關掉分頁、切到別的 App 前先存好 */
+addEventListener("pagehide",flush);document.addEventListener("visibilitychange",()=>{if(document.hidden)flush();});
+/* 整篇字型、大小、縮排：每份草稿各自記住 */
+const STYLE_TYPES=["chapters","side","notes"]; /* 後台有「整篇字型／大小／段落縮排」欄位的內容 */
+function pvGet(){return {font:$("#pvFont").value,size:$("#pvSize").value,indent:$("#pvInd").value};}
+function pvSet(d){const v=(d&&d.pv)||{};$("#pvFont").value=v.font||"";$("#pvSize").value=v.size||"";$("#pvInd").value=v.indent||"";}
+["#pvFont","#pvSize","#pvInd"].forEach(id=>$(id).onchange=()=>{const d=cur();if(d){d.pv=pvGet();d.updated=Date.now();save();}render(true);});
+/* 有連到網站上某一篇時，提醒要到後台改哪些設定 */
+function styleHint(d){
+  if(!d||!d.src)return "";
+  const t=d.src.slice(0,d.src.indexOf(":")),pv=d.pv||{},site=d.siteStyle||{};
+  const names={font:["整篇字型","預設"],size:["整篇字體大小","預設"],indent:["段落縮排","跟隨網站設定"]};
+  const diff=Object.keys(names).filter(k=>(pv[k]||"")!==(site[k]||""));
+  if(!diff.length)return "";
+  if(!STYLE_TYPES.includes(t))return "<br>（這類內容的字型、大小和縮排都跟著網站的整體設定，上面的選項只影響預覽）";
+  return "<br>記得在後台這一篇把 "+diff.map(k=>`「${names[k][0]}」改成「${esc(pv[k]||names[k][1])}」`).join("、");
+}
+$("#draftSel").onchange=e=>{flush();store.cur=e.target.value;save();src.value=cur().text;pvSet(cur());render(true);src.scrollTop=0;};
+$("#newDraft").onclick=()=>{flush();const d=cur();if(d&&!d.src&&!d.text.trim()){src.focus();toast("目前這份就是空白草稿");return;}newDraft();toast("開了一份新草稿");};
+/* 電腦：編輯區捲動時，預覽跟著捲到差不多的位置 */
+src.addEventListener("scroll",()=>{if(narrow.matches)return;const p=$("#prev"),max=src.scrollHeight-src.clientHeight;if(max>0)p.scrollTop=src.scrollTop/max*(p.scrollHeight-p.clientHeight);},{passive:true});
+$("#newSel").innerHTML+=CMS_NEW.map(([k,l])=>`<option value="${k}">新增${l}</option>`).join("");
+$("#newSel").onchange=e=>{const k=e.target.value;e.target.value="";if(k)window.open(CMS+"/collection/"+k+"/new","_blank","noopener");};
+$("#dlBtn").onclick=()=>{flush();const d=cur();if(!src.value.trim()){toast("這份草稿是空的");return;}
+  const name=(d&&d.label?(d.label.split("｜")[1]||d.label):(plain(src.value).trim().split("\n")[0]||"草稿")).replace(/[\\/:*?"<>|\s]+/g,"_").slice(0,30)||"草稿";
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([src.value],{type:"text/plain;charset=utf-8"}));a.download=name+".txt";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast("已下載備份");};
 let cmCb=null;
-function ask(title,text,yes,cb){$("#cmTitle").textContent=title;$("#cmText").textContent=text;$("#cmYes").textContent=yes;cmCb=cb;$("#confirmModal").classList.add("on");$("#cmNo").focus();}
+function ask(title,text,yes,cb){if(!cur())return;$("#cmTitle").textContent=title;$("#cmText").textContent=text;$("#cmYes").textContent=yes;cmCb=cb;$("#confirmModal").classList.add("on");$("#cmNo").focus();}
 $("#cmNo").onclick=()=>$("#confirmModal").classList.remove("on");
 $("#cmYes").onclick=()=>{$("#confirmModal").classList.remove("on");if(cmCb)cmCb();};
 $("#delDraft").onclick=()=>ask("刪除這份草稿？",`「${draftName(cur())}」刪除後無法復原。`,"刪除",()=>{
+  clearTimeout(saveT);DELETED.add(store.cur);
   store.list=store.list.filter(d=>d.id!==store.cur);
-  if(!store.list.length){newDraft();}else{store.cur=store.list[0].id;save();fillSel();src.value=cur().text;render();}toast("草稿已刪除");});
+  if(!store.list.length){newDraft();}else{store.cur=[...store.list].sort((a,b)=>(b.updated||0)-(a.updated||0))[0].id;save();fillSel();src.value=cur().text;pvSet(cur());render(true);}toast("草稿已刪除");});
 
 /* 插入文字（盡量保留瀏覽器的復原功能） */
 function put(text,selStart,selEnd){
@@ -882,8 +982,18 @@ function put(text,selStart,selEnd){
   if(selStart!=null){const base=src.selectionEnd-text.length;src.setSelectionRange(base+selStart,base+selEnd);}
 }
 function wrap(pre,post,ph="文字"){
-  const a=src.selectionStart,b=src.selectionEnd,sel=src.value.slice(a,b)||ph;
-  put(pre+sel+post,pre.length,pre.length+sel.length);
+  const v=src.value,a=src.selectionStart,b=src.selectionEnd,sel=v.slice(a,b);
+  /* 「*淺色*」和「**粗體**」長得像：外面還有一顆 * 的時候不要誤判 */
+  const starClash=pre==="*"&&(v[a-2]==="*"||v[b+1]==="*");
+  /* 已經有這個格式 → 再按一次就取消 */
+  if(a!==b&&!starClash&&v.slice(a-pre.length,a)===pre&&v.slice(b,b+post.length)===post){src.setSelectionRange(a-pre.length,b+post.length);put(sel,0,sel.length);return;}
+  if(!sel.includes("\n")&&sel.length>pre.length+post.length&&sel.startsWith(pre)&&sel.endsWith(post)&&!(pre==="*"&&sel.startsWith("**"))){const t=sel.slice(pre.length,sel.length-post.length);put(t,0,t.length);return;}
+  if(!sel){put(pre+ph+post,pre.length,pre.length+ph.length);return;}
+  /* 選到好幾行：每一行各自加上格式；前後的空白不包進去（包進去格式會失效） */
+  const out=sel.split("\n").map(l=>{const m=l.match(/^(\s*)([\s\S]*?)(\s*)$/);return m[2]?m[1]+pre+m[2]+post+m[3]:l;}).join("\n");
+  if(sel.includes("\n")){put(out,0,out.length);return;}
+  const lead=sel.length-sel.trimStart().length,core=sel.trim().length;
+  put(out,lead+pre.length,lead+pre.length+core);
 }
 /* 同一類樣式（顏色／大小／字型）只保留一個，其他的合併 */
 const GROUP=k=>/^#/.test(k)||(STY[k]||"").startsWith("c-")?"c":(STY[k]||"").startsWith("s-")?"s":"f";
@@ -910,7 +1020,21 @@ function linePrefix(pre){
   const all=lines.every(l=>l.startsWith(pre));
   put(lines.map(l=>all?l.slice(pre.length):(l?pre+l:pre)).join("\n"));
 }
-$("#tools").addEventListener("click",e=>{
+/* 按工具列按鈕時，游標留在內文裡（手機的鍵盤才不會收起來、選取範圍也不會跑掉） */
+$("#tools").addEventListener("mousedown",e=>{if(e.target.closest("button")&&!e.target.closest("input,select"))e.preventDefault();});
+/* 彈出視窗放到工具列外面（工具列在手機上可以左右滑，放裡面會被切掉），位置跟著按下去的按鈕 */
+const POPS=[...document.querySelectorAll(".pop")];POPS.forEach(p=>document.body.append(p));
+function placePop(p){
+  const tr=$("#tools").getBoundingClientRect(),top=Math.round(tr.bottom+6),btn=document.querySelector("#tools .tb.on");
+  p.style.top=top+"px";p.style.maxHeight=`calc(100dvh - ${top+12}px)`;
+  if(narrow.matches){p.style.left="";return;}
+  const bl=btn?btn.getBoundingClientRect().left:16;p.style.left=Math.max(12,Math.min(bl,innerWidth-p.offsetWidth-12))+"px";
+}
+new MutationObserver(ms=>ms.forEach(m=>{if(m.target.classList.contains("pop")&&m.target.classList.contains("on"))placePop(m.target);})).observe(document.body,{subtree:true,attributes:true,attributeFilter:["class"]});
+addEventListener("resize",()=>POPS.forEach(p=>{if(p.classList.contains("on"))placePop(p);}));
+POPS.forEach(p=>{p.addEventListener("mousedown",e=>{if(e.target.closest("button"))e.preventDefault();});p.addEventListener("click",toolClick);});
+$("#tools").addEventListener("click",toolClick);
+function toolClick(e){
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.wrap){const[p,q]=t.dataset.wrap.split("|");wrap(p,q);}
   else if(t.dataset.line)linePrefix(t.dataset.line);
@@ -918,7 +1042,7 @@ $("#tools").addEventListener("click",e=>{
   else if(t.dataset.pop){const p=$("#"+t.dataset.pop),was=p.classList.contains("on");closePops();if(!was){p.classList.add("on");t.classList.add("on");}return;}
   else return;
   render();
-});
+}
 function closePops(){const ib=document.getElementById("imBtn");if(ib)ib.classList.remove("on");const vb=document.getElementById("vdBtn");if(vb)vb.classList.remove("on");document.querySelectorAll(".pop.on").forEach(p=>p.classList.remove("on"));document.querySelectorAll("[data-pop].on").forEach(b=>b.classList.remove("on"));}
 document.addEventListener("click",e=>{if(!e.target.closest(".pop")&&!e.target.closest("[data-pop]"))closePops();});
 $("#swatches").innerHTML=Object.entries(STY).filter(([k,v])=>v.startsWith("c-")).map(([k,v])=>`<button type="button" class="sw" data-sty="${k}" title="${k}" style="background:var(--${v==="c-gray"?"muted":v})" aria-label="${k}色"></button>`).join("");
@@ -931,9 +1055,28 @@ function openLink(){
   const a=src.selectionStart,b=src.selectionEnd,sel=src.value.slice(a,b);lkRange=[a,b];
   const m=sel.match(/^\[([^\]]*)\]\(([^)]*)\)$/);
   $("#lkText").value=m?m[1]:(isUrl(sel)?"":sel);$("#lkUrl").value=m?m[2]:(isUrl(sel)?sel.trim():"");
-  closePops();$("#popLink").classList.add("on");$("#linkBtn").classList.add("on");
-  ($("#lkUrl").value?$("#lkText"):$("#lkUrl")).focus();
+  closePops();$("#popLink").classList.add("on");$("#linkBtn").classList.add("on");$("#lkSite").value="";loadSitePages();
+  if(!narrow.matches)($("#lkUrl").value?$("#lkText"):$("#lkUrl")).focus();
 }
+/* 站內頁面清單（角色、章節、角色故事、文章、名詞、小工具） */
+let sitePagesLoaded=false;
+async function loadSitePages(){
+  if(sitePagesLoaded)return;sitePagesLoaded=true;
+  const get=async f=>{try{const r=await fetch("data/"+f,{cache:"no-cache"});if(!r.ok)return [];const t=await r.text();const d=t.trim()?JSON.parse(t):[];return Array.isArray(d)?d.filter(x=>x&&typeof x==="object"):[];}catch(e){return [];}};
+  const [ch,cp,sd,nt,gl,tl]=await Promise.all(["characters.json","chapters.json","side-stories.json","notes.json","glossary.json","tools.json"].map(get));
+  const safe=k=>/[\s()]/.test(k)?encodeURIComponent(k):k;
+  const grp=(label,list)=>list.length?`<optgroup label="${label}">${list.map(([h,t])=>`<option value="${esc(h)}" data-t="${esc(t)}">${esc(t)}</option>`).join("")}</optgroup>`:"";
+  const fixed=[["#stories","故事列表"],["#side","角色故事列表"],["#characters","角色列表"],["#commissions","委託圖"],["#tools","小工具"],["#notes","文章列表"],["#glossary","名詞百科"],["#about","關於"]];
+  $("#lkSite").innerHTML=`<option value="">（選一個角色、章節、名詞…）</option>`+
+    grp("角色",ch.filter(x=>x.name).map(x=>["#char-"+safe(x.name),x.name]))+
+    grp("故事章節",cp.filter(x=>x.id||x.title).map(x=>["#read-"+safe(x.id||x.title),(x.series?x.series+"・":"")+x.title]))+
+    grp("角色故事",sd.filter(x=>x.id||x.title).map(x=>["#side-"+safe(x.id||x.title),(x.character?x.character+"・":"")+x.title]))+
+    grp("名詞百科",gl.filter(x=>x.term).map(x=>["#term-"+safe(String(x.term).trim()),String(x.term).trim()]))+
+    grp("文章",nt.filter(x=>x.id||x.title).map(x=>["#note-"+safe(x.id||x.title),x.title]))+
+    grp("小工具",tl.filter(x=>x.id||x.title).map(x=>["#tool-"+safe(x.id||x.title),x.title]))+
+    grp("網站分頁",fixed);
+}
+$("#lkSite").onchange=e=>{const o=e.target.selectedOptions[0];if(!o||!o.value)return;$("#lkUrl").value=o.value;if(!$("#lkText").value.trim())$("#lkText").value=(o.dataset.t||"").split("・").pop();};
 $("#linkBtn").addEventListener("click",e=>{e.stopPropagation();if($("#popLink").classList.contains("on"))closePops();else openLink();},true);
 function insertLink(){
   let text=$("#lkText").value.trim(),url=$("#lkUrl").value.trim();
@@ -956,13 +1099,15 @@ async function loadImLib(){
     const r=await fetch(c.url.replace(/\/$/,"")+"/list?prefix="+encodeURIComponent(f?f+"/":""),{headers:{"X-Upload-Key":c.key}});
     const d=await r.json();if(!r.ok)throw new Error(d.error||r.status);
     const base=(c.base||"").replace(/\/$/,"");
-    imItems=(d.objects||[]).map(o=>({key:o.key,url:base+"/"+o.key,t:String(o.uploaded)})).sort((a,b)=>b.t.localeCompare(a.t));
+    let objs=d.objects||[];const thumbs=new Set(objs.filter(o=>o.key.startsWith("thumbs/")).map(o=>o.key));
+    if(f){try{const r2=await fetch(c.url.replace(/\/$/,"")+"/list?prefix="+encodeURIComponent("thumbs/"+f+"/"),{headers:{"X-Upload-Key":c.key}});const d2=await r2.json();(d2.objects||[]).forEach(o=>thumbs.add(o.key));}catch(e){}}
+    imItems=objs.filter(o=>!o.key.startsWith("thumbs/")).map(o=>({key:o.key,url:base+"/"+o.key,th:thumbs.has("thumbs/"+o.key+".webp")?base+"/thumbs/"+o.key+".webp":"",t:String(o.uploaded)})).sort((a,b)=>b.t.localeCompare(a.t));
     imLoaded=true;renderImLib();
   }catch(e){$("#imMsg").textContent="圖庫載入失敗："+e.message;}
 }
 function renderImLib(){
   const q=$("#imSearch").value.trim().toLowerCase(),list=imItems.filter(o=>!q||o.key.toLowerCase().includes(q));
-  $("#imLib").innerHTML=list.map(o=>`<button type="button" class="imPick${$("#imUrl").value===o.url?" on":""}" data-u="${esc(o.url)}" title="${esc(o.key)}"><img src="${esc(o.url)}" alt="${esc(o.key)}" loading="lazy"></button>`).join("");
+  $("#imLib").innerHTML=list.map(o=>`<button type="button" class="imPick${$("#imUrl").value===o.url?" on":""}" data-u="${esc(o.url)}" title="${esc(o.key)}"><img src="${esc(o.th||o.url)}" alt="${esc(o.key)}" loading="lazy"${o.th?` onerror="this.onerror=null;this.src='${esc(o.url)}'"`:""}></button>`).join("");
   $("#imMsg").textContent=list.length?`點一張圖就會填進上面的網址（共 ${list.length} 張）`:"沒有符合的圖片";
 }
 $("#imLib").addEventListener("click",e=>{e.stopPropagation();const b=e.target.closest(".imPick");if(!b)return;$("#imUrl").value=b.dataset.u;renderImLib();$("#imCap").focus();});
@@ -974,7 +1119,7 @@ $("#imBtn").addEventListener("click",e=>{
   const sel=src.value.slice(imRange[0],imRange[1]).trim();
   $("#imUrl").value=/^https?:\/\//.test(sel)?sel:"";$("#imCap").value=/^https?:\/\//.test(sel)?"":sel;
   closePops();$("#popImg").classList.add("on");$("#imBtn").classList.add("on");
-  $("#imUrl").focus();if(!imLoaded)loadImLib();else renderImLib();
+  if(!narrow.matches)$("#imUrl").focus();if(!imLoaded)loadImLib();else renderImLib();
 },true);
 function insertImage(){
   const u=$("#imUrl").value.trim(),sz=$("#imSize").value,cap=$("#imCap").value.trim().replace(/[\[\]|｜]/g,"")+(sz?"|"+sz:"");
@@ -1024,7 +1169,8 @@ $("#clearBtn").onclick=()=>{
 $("#tidyBtn").onclick=()=>{
   let v=src.value.replace(/\r\n?/g,"\n").replace(/[ \t　]+$/gm,"");
   const singles=(v.match(/[^\n]\n[^\n]/g)||[]).length,doubles=(v.match(/\n\n/g)||[]).length;
-  if(singles>doubles)v=v.replace(/\n+/g,"\n\n");
+  /* 整篇幾乎都是「一行一段」→ 每行之間補一個空行；清單（- ）和引言（> ）連續的行保持在一起 */
+  if(singles>doubles)v=v.replace(/\n+/g,"\n\n").replace(/^((?:- |・ |> ).*)\n\n(?=(?:- |・ |> ))/gm,(m,l)=>l+"\n");
   v=v.replace(/\n{3,}/g,"\n\n").trim()+"\n";
   src.select();put(v);src.setSelectionRange(0,0);render();toast("段落整理好了");
 };
@@ -1038,13 +1184,16 @@ src.addEventListener("keydown",e=>{
   if(k==="i"){e.preventDefault();wrap("*","*");render();}
   if(k==="k"){e.preventDefault();openLink();}
 });
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();flush();save();toast(saveFail?"⚠ 沒有存到":"草稿已經存在這台裝置了");}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closePops();document.querySelectorAll(".modal.on").forEach(m=>m.classList.remove("on"));}});
 document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{
   $("#work").dataset.tab=b.dataset.tab;
   document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("on",x.dataset.tab===b.dataset.tab));
+  if(b.dataset.tab==="prev"&&pvDirty)renderPreview();
 }));
 $("#copyBtn").onclick=async()=>{
-  try{await navigator.clipboard.writeText(src.value);toast("已複製，到後台的內文欄位貼上就好");}
+  flush();const d=cur();
+  try{await navigator.clipboard.writeText(src.value);toast(d&&d.src?`已複製。按「開啟後台的這一篇」，貼到「${d.field||"內文"}」欄位再存檔`:"已複製，到後台的內文欄位貼上就好");}
   catch(e){src.focus();src.select();toast("請按 Ctrl/⌘+C 或長按選擇「拷貝」");}
 };
 let tT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(tT);tT=setTimeout(()=>t.classList.remove("on"),2200);}
@@ -1067,27 +1216,43 @@ const SRC={
 };
 async function fetchSrc(key){
   const i=key.indexOf(":"),type=key.slice(0,i),id=key.slice(i+1),cfg=SRC[type];if(!cfg)throw new Error("不認得的內容類型");
-  const r=await fetch("data/"+cfg.file+"?v="+Date.now());if(!r.ok)throw new Error("讀不到 "+cfg.file);
+  const r=await fetch("data/"+cfg.file,{cache:"no-cache"});if(!r.ok)throw new Error("讀不到 "+cfg.file);
   const t=await r.text();const data=t.trim()?JSON.parse(t):[];
   if(type==="site")return {label:"網站設定｜關於頁",field:cfg.fieldLabel,text:data[cfg.field]||""};
   const item=(Array.isArray(data)?data:[]).find(x=>x&&cfg.key(x)===id);if(!item)throw new Error("網站上找不到這篇內容");
-  return {label:`${cfg.label}｜${item.title||item.name||item.term}`,field:cfg.fieldLabel,text:item[cfg.field]||""};
+  return {label:`${cfg.label}｜${item.title||item.name||item.term}`,field:cfg.fieldLabel,text:item[cfg.field]||"",file:item._file||"",
+    style:{font:FONT[item.font]?item.font:"",size:SIZE[item.size]?item.size:"",indent:IND[item.indent]?item.indent:""}};
 }
+const same=(a,b)=>String(a||"").replace(/\r\n?/g,"\n").trim()===String(b||"").replace(/\r\n?/g,"\n").trim();
 async function openFromHash(){
   const m=location.hash.match(/^#edit=(.+)$/);if(!m)return;
   let key;try{key=decodeURIComponent(m[1]);}catch(e){return;}
   history.replaceState(null,"",location.pathname);
+  flush();
   const old=store.list.find(d=>d.src===key);
-  if(old){const d=cur();if(d)d.text=src.value;store.cur=old.id;save();fillSel();src.value=old.text;render();toast("接續上次這篇的草稿");return;}
+  if(old){
+    store.cur=old.id;save();fillSel();src.value=old.text;pvSet(old);render(true);
+    /* 這篇之前開過：和網站上現在的版本比一比，避免把舊草稿貼回去蓋掉新內容 */
+    try{
+      const r=await fetchSrc(key);if(cur()!==old)return;
+      old.label=r.label;old.field=r.field;old.file=r.file;old.siteStyle=r.style;if(!old.pv){old.pv={...r.style};pvSet(old);}
+      if(same(r.text,old.text)){old.base=r.text;old.remoteDiff=false;toast("接續上次這篇的草稿");}
+      else if(old.base===undefined||same(old.base,old.text)){old.text=r.text;old.base=r.text;old.remoteDiff=false;old.updated=Date.now();src.value=r.text;toast("已更新成網站上的最新版本");}
+      else if(same(old.base,r.text)){old.remoteDiff=false;toast("接續上次還沒貼回去的草稿");}
+      else{old.remoteDiff=true;toast("注意：網站上的版本和這份草稿不一樣");}
+      save();fillSel();render(true);
+    }catch(e){toast("接續上次這篇的草稿");}
+    return;
+  }
   try{
-    const r=await fetchSrc(key);const d=cur();if(d)d.text=src.value;
-    const nd={id:"d"+Date.now(),text:r.text,updated:Date.now(),src:key,label:r.label,field:r.field};
-    store.list.unshift(nd);store.cur=nd.id;save();fillSel();src.value=r.text;render();toast("已帶入網站上的內容");
+    const r=await fetchSrc(key);
+    const nd={id:"d"+Date.now(),text:r.text,base:r.text,updated:Date.now(),src:key,label:r.label,field:r.field,file:r.file,siteStyle:r.style,pv:{...r.style}};
+    store.list.unshift(nd);store.cur=nd.id;save();fillSel();src.value=r.text;pvSet(nd);render(true);src.scrollTop=0;toast("已帶入網站上的內容");
   }catch(e){toast("帶入失敗："+e.message);}
 }
 $("#reloadSrc").onclick=()=>{const d=cur();if(!d||!d.src)return;
   ask("重新載入網站上的版本？","這份草稿目前的修改會被網站上的版本取代。","重新載入",async()=>{
-    try{const r=await fetchSrc(d.src);d.text=r.text;d.label=r.label;save();fillSel();src.value=r.text;render();toast("已載入網站上的版本");}catch(e){toast("載入失敗："+e.message);}
+    try{const r=await fetchSrc(d.src);clearTimeout(saveT);d.text=r.text;d.base=r.text;d.remoteDiff=false;d.label=r.label;d.file=r.file;d.siteStyle=r.style;d.pv={...r.style};pvSet(d);d.updated=Date.now();save();fillSel();src.value=r.text;render(true);toast("已載入網站上的版本");}catch(e){toast("載入失敗："+e.message);}
   });};
 addEventListener("hashchange",openFromHash);
 /* 成人內容密碼代碼（SHA-256，和網站用同一個前綴） */
@@ -1099,11 +1264,11 @@ $("#pwGen").onclick=async()=>{
 };
 $("#pwCopy").onclick=async()=>{try{await navigator.clipboard.writeText($("#pwOut").textContent);toast("代碼已複製，貼到後台的「密碼代碼」");}catch(e){toast("請手動選取代碼複製");}};
 /* 預覽套用網站的「段落縮排」設定 */
-fetch("data/site.json?v="+Date.now()).then(r=>r.ok?r.json():{}).then(d=>{
+fetch("data/site.json",{cache:"no-cache"}).then(r=>r.ok?r.json():{}).then(d=>{
   const ind=({"每一行都縮排":"ind-all","只有段落第一行縮排":"ind-first"})[((d&&d.theme)||{}).indent]||"";
   if(ind)document.documentElement.classList.add(ind);
 }).catch(()=>{});
-render();openFromHash();
+pvSet(cur());render(true);setSaveState();openFromHash();
 </script>
 </body>
 </html>
