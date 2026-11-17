@@ -214,7 +214,10 @@
     const row = (label, value) => {
       const labels = label ? wrap(measure, label, LABEL_W - 22, F.label) : [];
       const lines = value.split('\n').filter(p => p.trim()).flatMap(p => wrap(measure, p, W - 2 * M - LABEL_W, F.body));
-      for (let i = 0; i < Math.max(labels.length, lines.length); i++) blocks.push({ h: 44, keep: i < labels.length - 1, draw(ctx, y) {
+      const total = Math.max(labels.length, lines.length);
+      // 短的項目（4 行以內）整段一起換頁；長的項目至少前兩行、最後兩行不分開，避免只剩一行落在下一頁
+      const together = i => total <= 4 ? i < total - 1 : (i === 0 || i === total - 2 || i < labels.length - 1);
+      for (let i = 0; i < total; i++) blocks.push({ h: 44, keep: together(i), draw(ctx, y) {
         if (labels[i]) { ctx.font = F.label; ctx.fillStyle = C.label; ctx.fillText(labels[i], M, y + 11); }
         if (lines[i]) { ctx.font = F.body; ctx.fillStyle = C.ink; ctx.fillText(lines[i], M + LABEL_W, y + 8); }
       } });

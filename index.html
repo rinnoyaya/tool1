@@ -59,6 +59,8 @@
     #translation{width:100%;min-height:150px;border:1px solid #d3d9e0;border-radius:12px;padding:12px;line-height:1.6;resize:vertical;outline:none;background:#fff}#translation:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px #dce9f5}
     .t-status{font-size:.86rem;margin:8px 0 0;line-height:1.55}.t-status.ok{color:var(--ok)}.t-status.warn{color:#9a6a1f}
     .lang-switch{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:.88rem;color:var(--sub);font-weight:700}.lang-switch button{border:1px solid #cfd8e1;background:#fff;border-radius:999px;padding:6px 14px;font-weight:700;color:var(--sub);min-height:38px}.lang-switch button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+    .checks{border:1px solid #f0d9a8;background:#fffaf0;border-radius:14px;padding:14px 16px;margin:0 0 16px}.checks h2{margin:0 0 4px;font-size:1rem;color:#7a5512}.checks>p{margin:0 0 10px;color:#8a6a2f;font-size:.84rem;line-height:1.5}.checks ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}.checks li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;font-size:.9rem;line-height:1.55;color:#4d3a12}.checks li button{flex:none;border:1px solid #e2c48a;background:#fff;color:#7a5512;border-radius:10px;padding:6px 12px;font-weight:700;font-size:.84rem;min-height:36px}
+    .ai-links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.ai-links a{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid #cfd8e1;border-radius:12px;background:#fff;padding:10px 6px;text-decoration:none;color:var(--brand);font-weight:800;font-size:.92rem}.ai-links a:hover{background:#f3f7fb}.ai-links a span{font-weight:500;color:var(--sub);font-size:.74rem}
     .big-copy{width:100%;margin-top:14px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:1.05rem;padding:15px}.big-copy:hover{background:var(--brand-2)}
     .send-title{margin:26px 0 4px;font-size:1.05rem}.send-sub{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.send-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.send{border:1px solid #cfd8e1;border-radius:14px;background:#fff;padding:14px;text-align:left;display:flex;flex-direction:column;gap:5px;min-height:92px}.send:hover{background:#f3f7fb;border-color:var(--brand-2)}.send:disabled{opacity:.6;cursor:wait}.send b{color:var(--brand);font-size:1rem}.send span{color:var(--sub);font-size:.8rem;line-height:1.45}
     .ghost{border:1px solid #cfd8e1;border-radius:12px;background:#fff;color:var(--brand);font-weight:700;padding:11px 8px;min-height:46px;font-size:.9rem}.ghost:hover{background:#f3f7fb}.ghost:disabled{opacity:.55;cursor:wait}
@@ -104,7 +106,7 @@
         <div class="grid">
           <div class="field full"><label for="workType">委託類型</label><input id="workType" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="workType"><button type="button">頭像</button><button type="button">半身</button><button type="button">全身</button><button type="button">Q版</button><button type="button">雙人</button><button type="button">立繪</button><button type="button">含背景</button></div></div>
           <div class="field full"><label for="purpose">使用用途</label><input id="purpose" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="purpose"><button type="button">私人收藏</button><button type="button">社群頭像</button><button type="button">公開展示</button><button type="button">印製周邊</button><button type="button">商業使用</button></div></div>
-          <div class="field"><label for="budget">預算 <span class="hint">選填</span></label><input id="budget" placeholder="例：新臺幣 3,000 元左右"></div>
+          <div class="field"><label for="budget">預算 <span class="hint">選填</span></label><input id="budget" placeholder="例：新臺幣 3,000 元（請寫上幣別）"></div>
           <div class="field"><label for="deadline">希望交期 <span class="hint">選填</span></label><input id="deadline" placeholder="例：12 月 20 日前；可討論"></div>
         </div>
       </section>
@@ -128,7 +130,7 @@
       <section class="step" data-step="4" data-title="交付" hidden>
         <div class="step-head"><span class="step-no">STEP 4 / 5</span><h1>交付與注意事項</h1><p>尺寸、格式和一定要注意的地方。</p></div>
         <div class="grid">
-          <div class="field"><label for="size">尺寸與比例</label><input id="size" placeholder="例：3000 × 4000 px、3:4"></div>
+          <div class="field"><label for="size">尺寸與比例</label><input id="size" placeholder="例：寬 3000 × 高 4000 px（3:4）"></div>
           <div class="field"><label for="format">檔案格式</label><input id="format" placeholder="例：PNG"><div class="chips" data-for="format"><button type="button">PNG</button><button type="button">JPG</button><button type="button">PSD</button><button type="button">透明背景</button></div></div>
           <div class="field full"><label for="must">一定要保留的重點</label><textarea id="must" placeholder="例：狐耳和尾巴尖端是白色"></textarea></div>
           <div class="field full"><label for="avoid">希望避免的畫法</label><textarea id="avoid" placeholder="例：不要改變圍巾顏色；不要加入文字"></textarea></div>
@@ -142,13 +144,17 @@
 
       <section class="step" data-step="5" data-title="完成" hidden>
         <div class="step-head"><span class="step-no">STEP 5 / 5</span><h1>完成！傳給繪師吧</h1><p>確認內容後，選一種方式傳給繪師。要修改可以點上方的步驟。</p></div>
-        <details class="translate" id="translatePanel"><summary>委託外國繪師？翻譯成其他語言<span>選填</span></summary>
+        <div class="checks" id="checks" hidden><h2>傳送前看一下</h2><p>這些地方繪師可能會誤會，建議先修改（不改也可以傳送）。</p><ul id="checkList"></ul></div>
+        <details class="translate" id="translatePanel"><summary>委託外國繪師？用 AI 翻譯成其他語言<span>選填</span></summary>
           <ol class="t-steps">
-            <li><b>拿去翻譯</b>
-              <div class="t-row"><select id="targetLang" aria-label="要翻譯成的語言"><option value="ja">日文</option><option value="en">英文</option><option value="ko">韓文</option><option value="zh-CN">簡體中文</option><option value="fr">法文</option><option value="de">德文</option><option value="es">西班牙文</option><option value="th">泰文</option></select><button type="button" class="ghost" id="openTranslate">用 Google 翻譯開啟</button><button type="button" class="ghost" id="copyForTranslate">只複製文字</button></div>
-              <p class="t-tip">也可以把文字貼到 DeepL、ChatGPT 等翻譯工具。請整段一起翻譯，不要刪掉空行和換行，這樣圖片才能放回對的位置。</p></li>
-            <li><b>把翻譯結果貼回這裡</b>
-              <textarea id="translation" placeholder="把翻譯好的整段文字貼在這裡"></textarea>
+            <li><b>選語言，複製翻譯指令</b>
+              <div class="t-row"><select id="targetLang" aria-label="要翻譯成的語言"><option value="ja">日文</option><option value="en">英文</option><option value="ko">韓文</option><option value="zh-CN">簡體中文</option><option value="fr">法文</option><option value="de">德文</option><option value="es">西班牙文</option><option value="th">泰文</option></select><button type="button" class="ghost" id="copyPrompt">複製翻譯指令</button></div>
+              <p class="t-tip">指令裡已經寫好翻譯規則（保留格式、語氣禮貌、名字不亂翻），直接貼給 AI 就好。</p></li>
+            <li><b>貼到任一個 AI，送出</b>
+              <div class="ai-links"><a href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT<span>OpenAI</span></a><a href="https://gemini.google.com/" target="_blank" rel="noopener">Gemini<span>Google</span></a><a href="https://claude.ai/" target="_blank" rel="noopener">Claude<span>Anthropic</span></a></div>
+              <p class="t-tip">三個都有免費方案（每天有使用次數限制），翻譯品質比一般翻譯網站好。AI 回覆後，按翻譯結果旁的「複製」按鈕。</p></li>
+            <li><b>把 AI 的翻譯貼回這裡</b>
+              <textarea id="translation" placeholder="把 AI 翻譯好的整段文字貼在這裡"></textarea>
               <div class="t-row" style="margin-top:8px"><button type="button" class="ghost" id="pasteTranslation">貼上翻譯結果</button><button type="button" class="ghost" id="clearTranslation">清除翻譯</button></div>
               <p class="t-status" id="translationStatus" role="status" aria-live="polite"></p></li>
           </ol>
@@ -199,8 +205,9 @@
     <div class="field full"><label>外觀特徵</label><textarea data-key="appearance" placeholder="髮型、髮色、眼睛、種族特徵等。左右位置請寫清楚。"></textarea></div>
     <div class="field full"><label>服裝與配件</label><textarea data-key="clothing" placeholder="例：綠色長大衣、紅色圍巾"></textarea></div>
     <div class="field full"><label>設定圖 <span class="hint">可選多張</span></label><div class="upload"><div class="image-list"></div><input class="image-input" type="file" accept="image/*" multiple hidden aria-label="加入角色設定圖"><div class="upload-note">可一次選多張。電腦可以把圖片拖進來，或直接貼上（Ctrl+V）。</div></div></div>
-    <details class="more"><summary>更多：個性、參考連結</summary><div class="grid">
+    <details class="more"><summary>更多：個性、外文拼法、參考連結</summary><div class="grid">
       <div class="field full"><label>個性與想呈現的感覺</label><textarea data-key="personality" placeholder="例：好奇心旺盛，笑起來很有活力"></textarea></div>
+      <div class="field full"><label>名字的外文拼法 <span class="hint">委託外國繪師時填寫</span></label><input data-key="romaji" placeholder="例：Eleonoa"></div>
       <div class="field full"><label>參考圖連結或說明</label><input data-key="reference" placeholder="例：設定圖連結"></div>
     </div></details>
   </div></div></template>
@@ -213,7 +220,7 @@
       const sections=[...form.querySelectorAll('.step')], LAST=sections.length, STEP_KEY='commissionBriefStepV2';
       const v=id=>document.getElementById(id).value.trim();
       const DEFAULT_GREETING='您好，想向您委託一張作品，以下是我的需求：', DEFAULT_CLOSING='如果有需要釐清或調整的地方，歡迎和我討論，謝謝您！';
-      const CHARACTER_KEYS=['name','role','appearance','clothing','personality','reference'];
+      const CHARACTER_KEYS=['name','romaji','role','appearance','clothing','personality','reference'];
       let latest='', latestData={greeting:'',sections:[],closing:''}, toastTimer, step=1;
       const imageCount=el=>window.commissionImageDraft?.count(el)||0;
 
@@ -249,7 +256,8 @@
         const add=(title,rows,extra={})=>{rows=rows.filter(r=>r[1]);if(rows.length)sections.push({title,rows,...extra})};
         add('基本資訊',[['委託類型',v('workType')],['使用用途',v('purpose')],['預算',v('budget')],['希望交期',v('deadline')]]);
         [...container.children].forEach((card,i)=>{const get=k=>card.querySelector(`[data-key="${k}"]`).value.trim();const n=imageCount(card);
-          add(`角色 ${i+1}${get('name')?'｜'+get('name'):''}`,[['名稱',get('name')],['身分／關係',get('role')],['外觀',get('appearance')],['服裝與配件',get('clothing')],['個性與感覺',get('personality')],['參考圖',get('reference')],['設定圖',n?`另附 ${n} 張`:'',true]],{card})});
+          const name=get('name')&&get('romaji')?`${get('name')}（${get('romaji')}）`:get('name')||get('romaji');
+          add(`角色 ${i+1}${name?'｜'+name:''}`,[['名稱',name],['身分／關係',get('role')],['外觀',get('appearance')],['服裝與配件',get('clothing')],['個性與感覺',get('personality')],['參考圖',get('reference')],['設定圖',n?`另附 ${n} 張`:'',true]],{card})});
         add('畫面需求',[['情境與構圖',v('scene')],['姿勢／表情／互動',v('interaction')],['背景與氛圍',v('background')],['畫風與色彩',v('style')]]);
         const others=imageCount(document.getElementById('otherReferenceUpload'));
         add('交付與補充',[['尺寸與比例',v('size')],['檔案格式',v('format')],['一定要保留',v('must')],['希望避免',v('avoid')],['參考資料',v('references')],['其他參考圖',others?`另附 ${others} 張`:'',true],['其他補充',v('notes')]],{kind:'delivery'});
@@ -268,7 +276,9 @@
         blocks.push({kind:'closing',lines:squash(data.closing).split('\n')});
         return blocks;
       }
-      const parseBlocks=text=>text.replace(/\r\n?/g,'\n').split(/\n[ \t\u3000]*\n/).map(b=>b.split('\n').map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
+      // 去掉 AI 可能加上的程式碼區塊標記、分隔線
+      const cleanAI=text=>text.replace(/\r\n?/g,'\n').split('\n').filter(l=>!/^\s*(```[\w-]*|={3,})\s*$/.test(l)).join('\n').trim();
+      const parseBlocks=text=>cleanAI(text).split(/\n[ \t\u3000]*\n/).map(b=>b.split('\n').map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
       const stripBrackets=t=>t.replace(/^[\[【〔「『(（<《〈\s]+|[\]】〕」』)）>》〉\s]+$/g,'').trim()||t;
       function mapTranslation(blocks,parsed){
         if(!blocks.length||parsed.length!==blocks.length||parsed.some((b,i)=>b.length!==blocks[i].lines.length))return null;
@@ -284,7 +294,7 @@
         const tl=document.getElementById('targetLang');if(!tl.value)tl.value='ja';
         const blocks=structure(latestData);
         sourceText=blocks.map(b=>b.lines.join('\n')).join('\n\n');
-        const t=tInput.value.trim();
+        const t=cleanAI(tInput.value);
         langSwitch.hidden=!t;
         const useT=Boolean(t)&&outputLang.value==='translated';
         [...langSwitch.querySelectorAll('button')].forEach(b=>{const on=(b.dataset.mode==='translated')===useT;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
@@ -299,6 +309,25 @@
         tStatus.textContent=msg;tStatus.className='t-status '+cls;
         if(!t||!useT)active={text:latest,data:{...latestData,docTitle:DOC_TITLE,credit:'畫委託需求整理所',lang:'zh'}};
       }
+      /* ---------- 傳送前檢查：根據實際委託常見的誤會 ---------- */
+      function findChecks(){
+        const list=[], val=id=>document.getElementById(id).value.trim();
+        const foreign=Boolean(tInput.value.trim())||document.getElementById('translatePanel').open;
+        if(val('budget')&&!/[^\d\s,.\-~～]/.test(val('budget')))list.push({text:`預算只寫了「${val('budget')}」，沒有幣別。${foreign?'外國繪師會以為是他們國家的貨幣。':'建議寫上幣別，例如「新臺幣 3,000 元」。'}`,step:1,el:document.getElementById('budget')});
+        if(/背景/.test(val('workType'))&&!/無背景|不含背景|不要背景/.test(val('workType'))&&/透明|去背/.test(val('format')))list.push({text:'委託類型寫了「含背景」，檔案格式卻寫「透明背景」，繪師會不知道要不要畫背景。如果兩種都要，請寫「另附一張去背版本」。',step:4,el:document.getElementById('format')});
+        const OK_LR=/畫面|觀看|看圖|視角|本人|自己的|角色的左|角色的右/, lr=[];
+        [...container.children].forEach((card,i)=>{const el=card.querySelector('[data-key="appearance"]');if(/[左右]/.test(el.value)&&!OK_LR.test(el.value))lr.push({el,step:2,where:`角色 ${i+1} 的外觀`})});
+        [['scene',3,'情境與構圖'],['interaction',3,'姿勢、表情與互動'],['must',4,'一定要保留的重點'],['avoid',4,'希望避免的畫法']].forEach(([id,st,where])=>{const el=document.getElementById(id);if(/[左右]/.test(el.value)&&!OK_LR.test(el.value))lr.push({el,step:st,where})});
+        if(lr.length)list.push({text:`「${lr[0].where}」寫到左右，建議註明是以「畫面（看圖的人）」還是「角色本人」的左右為準，避免畫反。`,step:lr[0].step,el:lr[0].el});
+        if(/\d+\s*[*xX×＊]\s*\d+/.test(val('size'))&&!/寬|高|橫|直|長邊|短邊/.test(val('size')))list.push({text:`尺寸「${val('size')}」建議寫成「寬 ○ × 高 ○ px」，避免寬高被看反。`,step:4,el:document.getElementById('size')});
+        if(foreign&&document.getElementById('targetLang').value!=='zh-CN'){const card=[...container.children].find(c=>/[\u4e00-\u9fff]/.test(c.querySelector('[data-key="name"]').value)&&!c.querySelector('[data-key="romaji"]').value.trim());if(card)list.push({text:'角色名字是中文，外國繪師可能念不出來。建議在角色的「更多」裡填上名字的外文拼法。',step:2,el:card.querySelector('[data-key="romaji"]')})}
+        return list;
+      }
+      function showChecks(){
+        const box=document.getElementById('checks'), ul=document.getElementById('checkList'), list=latestData.sections.length?findChecks():[];
+        box.hidden=!list.length;
+        ul.replaceChildren(...list.map(c=>{const li=document.createElement('li');const span=document.createElement('span');span.textContent=c.text;const b=document.createElement('button');b.type='button';b.textContent='去修改';b.addEventListener('click',()=>{go(c.step,false);const d=c.el.closest('details');if(d)d.open=true;setTimeout(()=>{c.el.scrollIntoView({behavior:'smooth',block:'center'});c.el.focus({preventScroll:true})},60)});li.append(span,b);return li}));
+      }
       function render(){
         latestData=collect();
         const {greeting,sections:secs,closing}=latestData;
@@ -307,19 +336,30 @@
         form.querySelectorAll('details.more:not([open])').forEach(d=>{if([...d.querySelectorAll('input,textarea')].some(x=>x.value.trim()))d.open=true});
         if(tInput.value.trim())document.getElementById('translatePanel').open=true;
         preview.textContent=active.text||'還沒有填寫內容。可以點上方的步驟回去填寫。';preview.classList.toggle('placeholder',!active.text);
+        if(step===LAST)showChecks();
         updateSteps();syncChips();
       }
       const fireInput=()=>form.dispatchEvent(new Event('input',{bubbles:true}));
       async function writeClipboard(text){try{await navigator.clipboard.writeText(text);return true}catch{const area=document.createElement('textarea');area.value=text;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();area.setSelectionRange(0,area.value.length);const ok=document.execCommand('copy');area.remove();return ok}}
       function markSource(){render();tSource.value=sourceText;fireInput()}
-      document.getElementById('copyForTranslate').addEventListener('click',async()=>{render();if(!sourceText){showToast('請先填寫至少一項需求。');return}markSource();showToast(await writeClipboard(sourceText)?'已複製，請貼到翻譯工具。':'複製失敗，請再試一次。')});
-      document.getElementById('openTranslate').addEventListener('click',()=>{
-        render();if(!sourceText){showToast('請先填寫至少一項需求。');return}
-        markSource();const copied=writeClipboard(sourceText);
-        const short=sourceText.length<=1200, tl=document.getElementById('targetLang').value;
-        window.open(`https://translate.google.com/?sl=zh-TW&tl=${tl}${short?'&text='+encodeURIComponent(sourceText):''}&op=translate`,'_blank','noopener');
-        copied.then(ok=>showToast(short?'已開啟 Google 翻譯。翻好後按右下角的複製，再回來貼上。':ok?'文字較長，已複製好，請在翻譯頁面貼上。':'請回來按「只複製文字」再貼到翻譯頁面。'));
-      });
+      const LANG_NAMES={ja:'日文',en:'英文',ko:'韓文','zh-CN':'簡體中文',fr:'法文',de:'德文',es:'西班牙文',th:'泰文'};
+      function aiPrompt(){const lang=LANG_NAMES[document.getElementById('targetLang').value]||'日文';return `請把下面兩條「=====」之間的繪圖委託內容翻譯成${lang}，要傳給以${lang}為母語的繪師。
+
+翻譯規則：
+1. 只輸出翻譯結果，不要加任何前言、說明或備註。
+2. 行數和空行要和原文完全一樣：原文的每一行翻成一行，不要合併或拆開；段落之間的空行要保留。
+3. 每一行「項目：內容」的格式要保留，項目和內容之間只用一個冒號。
+4. 【】裡的是標題，翻譯後保留【】。
+5. 角色名字照原文保留；名字後面括號裡的外文拼法照抄。
+6. 數字、日期、尺寸、金額照原文，不要換算。
+7. 語氣自然、有禮貌，像委託人親自寫給繪師的訊息。
+8. 把翻譯結果放在一個程式碼區塊裡，方便我複製。
+
+=====
+${sourceText}
+=====`}
+      document.getElementById('translatePanel').addEventListener('toggle',()=>{if(step===LAST)showChecks()});
+      document.getElementById('copyPrompt').addEventListener('click',async()=>{render();if(!sourceText){showToast('請先填寫至少一項需求。');return}markSource();showToast(await writeClipboard(aiPrompt())?'已複製翻譯指令，請貼到 AI 並送出。':'複製失敗，請再試一次。')});
       document.getElementById('pasteTranslation').addEventListener('click',async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim()){showToast('剪貼簿是空的，請先複製翻譯結果。');return}tInput.value=t;tInput.dispatchEvent(new Event('input',{bubbles:true}))}catch{tInput.focus();showToast('請在框內長按（或按 Ctrl+V）貼上。')}});
       document.getElementById('clearTranslation').addEventListener('click',()=>{if(tInput.value.trim()&&!confirm('要清除翻譯內容嗎？'))return;tInput.value='';outputLang.value='';tSource.value='';fireInput()});
       tInput.addEventListener('input',()=>{const has=Boolean(tInput.value.trim());outputLang.value=has?'translated':'';if(has&&!tSource.value)tSource.value=sourceText});
@@ -350,10 +390,10 @@
       addCharacter();
       let saved=1;try{saved=localStorage.getItem('commissionBriefTextDraftV1')?(Number(localStorage.getItem(STEP_KEY))||1):1}catch{}
       go(saved,false);
-      if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
+      if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},romaji:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117d" defer></script>
-  <script src="./draft.js?v=20261117d" defer></script>
+  <script src="./export.js?v=20261117f" defer></script>
+  <script src="./draft.js?v=20261117f" defer></script>
 </body>
 </html>
