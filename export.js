@@ -140,8 +140,17 @@
 
   /* ================= 自動排版（圖片與 PDF 共用） ================= */
   const W = 1080, M = 72, PAGE_H = 1528, TOP = 70, FOOT = 92, SCALE = 2;
-  const family = '"PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif';
-  const F = { title: `900 46px ${family}`, head: `800 31px ${family}`, label: `700 24px ${family}`, body: `400 28px ${family}`, small: `400 21px ${family}` };
+  // 依語言選字型：日文、韓文用各自的字型，避免字形不對；其他語言最後都有中文字型備援
+  const TC = '"PingFang TC", "Microsoft JhengHei", "Noto Sans TC"';
+  const FAMILIES = {
+    zh: `${TC}, sans-serif`,
+    ja: `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Noto Sans JP", ${TC}, sans-serif`,
+    ko: `"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", ${TC}, sans-serif`,
+    sc: `"PingFang SC", "Microsoft YaHei", "Noto Sans SC", ${TC}, sans-serif`,
+    latin: `"Helvetica Neue", "Segoe UI", Arial, "Noto Sans", ${TC}, sans-serif`,
+  };
+  const fontsFor = lang => { const f = FAMILIES[lang] || FAMILIES.latin; return { title: `900 46px ${f}`, head: `800 31px ${f}`, label: `700 24px ${f}`, body: `400 28px ${f}`, small: `400 21px ${f}` }; };
+  let F = fontsFor('zh'), footerTitle = '繪圖委託需求', footerCredit = '畫委託需求整理所';
   const C = { ink: '#1c2b3a', navy: '#183e60', label: '#2a5a82', sub: '#7b8794', band: '#eef3f8', warm: '#eeb87a', line: '#e3e7ec' };
 
   function wrap(ctx, text, maxWidth, font) {
@@ -149,7 +158,7 @@
     const lines = [];
     let line = '';
     // 英文單字與數字不從中間斷開，中文逐字換行
-    for (const token of text.match(/[A-Za-z0-9@#&_.,:;'"!?()\-/+%]+|\s+|./gu) || []) {
+    for (const token of text.match(/[^\s\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\u3000-\u303f\uff01-\uff0f\uff1a-\uff20]+|\s+|./gu) || []) {
       if (line && ctx.measureText(line + token).width > maxWidth) {
         if (ctx.measureText(token).width > maxWidth) {
           for (const char of Array.from(token)) {
@@ -171,7 +180,8 @@
   async function buildPages() {
     const { data, cards } = window.getCommissionExportData();
     const all = [...cards, other];
-    if (!data.sections.length && !all.some(card => itemsOf(card).length)) throw new Error('請先填寫需求或加入參考圖。');
+    F = fontsFor(data.lang); footerTitle = data.docTitle; footerCredit = data.credit;
+    if (!data.sections.length && !data.plain && !all.some(card => itemsOf(card).length)) throw new Error('請先填寫需求或加入參考圖。');
     const pictures = new Map(); let failed = 0;
     for (const card of all) {
       const list = [];
@@ -197,13 +207,17 @@
       space(14);
     };
     // 左欄標籤、右欄內容，短的項目只佔一行
-    const LABEL_W = 222;
+    // 標籤欄寬依最長的標籤調整（外文標籤通常比較長），太長時自動換行
+    measure.font = F.label;
+    const longest = Math.max(0, ...data.sections.flatMap(s => s.rows.filter(r => !r[2]).map(r => measure.measureText(r[0]).width)));
+    const LABEL_W = Math.round(Math.min(330, Math.max(180, longest + 30)));
     const row = (label, value) => {
+      const labels = label ? wrap(measure, label, LABEL_W - 22, F.label) : [];
       const lines = value.split('\n').filter(p => p.trim()).flatMap(p => wrap(measure, p, W - 2 * M - LABEL_W, F.body));
-      lines.forEach((line, i) => blocks.push({ h: 44, draw(ctx, y) {
-        if (!i) { ctx.font = F.label; ctx.fillStyle = C.label; ctx.fillText(label, M, y + 11); }
-        ctx.font = F.body; ctx.fillStyle = C.ink; ctx.fillText(line, M + LABEL_W, y + 8);
-      } }));
+      for (let i = 0; i < Math.max(labels.length, lines.length); i++) blocks.push({ h: 44, keep: i < labels.length - 1, draw(ctx, y) {
+        if (labels[i]) { ctx.font = F.label; ctx.fillStyle = C.label; ctx.fillText(labels[i], M, y + 11); }
+        if (lines[i]) { ctx.font = F.body; ctx.fillStyle = C.ink; ctx.fillText(lines[i], M + LABEL_W, y + 8); }
+      } });
       space(12);
     };
     const images = list => {
@@ -230,21 +244,26 @@
       space(8);
     };
 
+    const titleLine = wrap(measure, data.docTitle, W - 2 * M, F.title)[0];
     blocks.push({ h: 118, draw(ctx, y) {
-      ctx.font = F.title; ctx.fillStyle = C.navy; ctx.fillText('繪圖委託需求', M, y);
+      ctx.font = F.title; ctx.fillStyle = C.navy; ctx.fillText(titleLine, M, y);
       ctx.fillStyle = C.warm; roundedPath(ctx, M, y + 70, 72, 7, 4); ctx.fill();
     } });
+    if (data.plain) {
+      // 翻譯結果的段落和原文對不上時：文字照原樣排，參考圖依序放在最後
+      paragraph(data.body); space(30);
+      for (const card of all) if (pictures.get(card).length) { images(pictures.get(card)); space(16); }
+    }
     if (data.sections.length) { paragraph(data.greeting); space(26); }
     for (const section of data.sections) {
       heading(section.title);
       for (const [label, value, attachmentNote] of section.rows) if (!attachmentNote) row(label, value);
-      if (section.card && pictures.get(section.card).length) {
-        text('設定圖', F.label, C.label, 40, 4, true);
-        images(pictures.get(section.card));
-      }
-      if (section.kind === 'delivery' && pictures.get(other).length) {
-        text('其他參考圖', F.label, C.label, 40, 4, true);
-        images(pictures.get(other));
+      // 圖片標題沿用訊息中「設定圖：另附 N 張」那一行的標籤（翻譯後也會跟著變成外文）
+      const caption = section.rows.find(r => r[2])?.[0];
+      const pics = section.card ? pictures.get(section.card) : section.kind === 'delivery' ? pictures.get(other) : [];
+      if (pics?.length) {
+        if (caption) { const lines = wrap(measure, caption, W - 2 * M, F.label); lines.forEach(l => text(l, F.label, C.label, 40, 4, true)); }
+        images(pics);
       }
       space(22);
     }
@@ -287,8 +306,11 @@
     const fy = height - FOOT + 30;
     ctx.fillStyle = C.line; ctx.fillRect(M, fy, W - 2 * M, 2);
     ctx.font = F.small; ctx.fillStyle = C.sub;
-    ctx.fillText('繪圖委託需求', M, fy + 18);
-    const pageLabel = `${index + 1} / ${total}`, credit = '畫委託需求整理所';
+    const pageLabel = `${index + 1} / ${total}`, credit = footerCredit;
+    const titleMax = (W - 2 * M) / 2 - ctx.measureText(pageLabel).width / 2 - 24;
+    let left = footerTitle;
+    while (left.length > 1 && ctx.measureText(left).width > titleMax) left = left.slice(0, -2) + '…';
+    ctx.fillText(left, M, fy + 18);
     ctx.fillText(pageLabel, (W - ctx.measureText(pageLabel).width) / 2, fy + 18);
     ctx.fillText(credit, W - M - ctx.measureText(credit).width, fy + 18);
     return canvas;
@@ -432,7 +454,9 @@
     }
     await downloadFiles(files); return 'downloaded';
   };
+  const translated = () => Boolean(window.getCommissionExportData().data.translated);
   function baseName() {
+    if (translated()) return 'commission-request';
     const first = [...characters.querySelectorAll('[data-key="name"]')].map(x => x.value.trim()).find(Boolean);
     return '委託需求' + (first ? '-' + first.replace(/[\\/:*?"<>|\s]+/g, '') : '');
   }
@@ -515,8 +539,9 @@
   }
   function namedOriginals() {
     const clean = value => value.replace(/[\\/:*?"<>|\s]+/g, '');
+    const foreign = translated();
     return groups().flatMap((card, index) => {
-      const name = card === other ? '其他參考圖' : `角色${index + 1}` + (clean(card.querySelector('[data-key="name"]').value) ? '-' + clean(card.querySelector('[data-key="name"]').value) : '');
+      const name = foreign ? (card === other ? 'reference' : `character${index + 1}`) : card === other ? '其他參考圖' : `角色${index + 1}` + (clean(card.querySelector('[data-key="name"]').value) ? '-' + clean(card.querySelector('[data-key="name"]').value) : '');
       return itemsOf(card).map(({ file }, i) => {
         const ext = (file.name.match(/\.[A-Za-z0-9]+$/) || ['.png'])[0];
         return new File([file], `${name}-${i + 1}${ext}`, { type: file.type, lastModified: file.lastModified });
@@ -536,9 +561,9 @@
     const button = event.currentTarget; button.disabled = true;
     try {
       const entries = [];
-      if (text) entries.push({ name: '委託需求.txt', data: new TextEncoder().encode('﻿' + text) });
+      if (text) entries.push({ name: translated() ? 'request.txt' : '委託需求.txt', data: new TextEncoder().encode('﻿' + text) });
       for (const file of files) entries.push({ name: file.name, data: new Uint8Array(await file.arrayBuffer()) });
-      await downloadFiles([new File([zip(entries)], `${baseName()}-原圖.zip`, { type: 'application/zip' })]);
+      await downloadFiles([new File([zip(entries)], `${baseName()}-${translated() ? 'originals' : '原圖'}.zip`, { type: 'application/zip' })]);
       say(`已下載 ZIP：${text ? '文字檔和 ' : ''}${files.length} 張原圖。`);
     } catch { say('打包失敗，請再試一次。'); }
     finally { button.disabled = false; }

@@ -53,6 +53,12 @@
     .chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{border:1px solid #cfd8e1;border-radius:999px;background:#fff;color:var(--sub);padding:7px 14px;font-size:.86rem;font-weight:600;min-height:36px}.chips button.on{background:var(--brand);border-color:var(--brand);color:#fff}
     /* 完成頁 */
     .preview{white-space:pre-wrap;overflow-wrap:anywhere;min-height:220px;max-height:46vh;overflow:auto;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:18px;line-height:1.8;font-size:.93rem}.placeholder{color:#8a96a3}
+    .translate{border:1px solid var(--line);border-radius:14px;padding:0 16px;margin:0 0 16px;background:#fbfcfd}.translate>summary{cursor:pointer;font-weight:800;color:var(--brand);padding:14px 0;list-style:none}.translate>summary::before{content:"＋ "}.translate[open]>summary::before{content:"－ "}.translate>summary span{font-weight:500;color:var(--sub);font-size:.85rem;margin-left:6px}
+    .t-steps{margin:0 0 16px;padding-left:1.4em;display:flex;flex-direction:column;gap:18px}.t-steps li{line-height:1.6}.t-steps li::marker{font-weight:800;color:var(--brand-2)}.t-steps b{display:block;margin-bottom:6px}.t-tip{margin:6px 0 0;color:var(--sub);font-size:.84rem;line-height:1.55}
+    .t-row{display:flex;flex-wrap:wrap;gap:8px}.t-row select{border:1px solid #cfd8e1;border-radius:12px;padding:9px 10px;background:#fff;min-height:46px;font-weight:700;color:var(--brand)}.t-row .ghost{flex:1 1 110px}
+    #translation{width:100%;min-height:150px;border:1px solid #d3d9e0;border-radius:12px;padding:12px;line-height:1.6;resize:vertical;outline:none;background:#fff}#translation:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px #dce9f5}
+    .t-status{font-size:.86rem;margin:8px 0 0;line-height:1.55}.t-status.ok{color:var(--ok)}.t-status.warn{color:#9a6a1f}
+    .lang-switch{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px;font-size:.88rem;color:var(--sub);font-weight:700}.lang-switch button{border:1px solid #cfd8e1;background:#fff;border-radius:999px;padding:6px 14px;font-weight:700;color:var(--sub);min-height:38px}.lang-switch button.on{background:var(--brand);border-color:var(--brand);color:#fff}
     .big-copy{width:100%;margin-top:14px;border:0;border-radius:14px;background:var(--brand);color:#fff;font-weight:800;font-size:1.05rem;padding:15px}.big-copy:hover{background:var(--brand-2)}
     .send-title{margin:26px 0 4px;font-size:1.05rem}.send-sub{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.send-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.send{border:1px solid #cfd8e1;border-radius:14px;background:#fff;padding:14px;text-align:left;display:flex;flex-direction:column;gap:5px;min-height:92px}.send:hover{background:#f3f7fb;border-color:var(--brand-2)}.send:disabled{opacity:.6;cursor:wait}.send b{color:var(--brand);font-size:1rem}.send span{color:var(--sub);font-size:.8rem;line-height:1.45}
     .ghost{border:1px solid #cfd8e1;border-radius:12px;background:#fff;color:var(--brand);font-weight:700;padding:11px 8px;min-height:46px;font-size:.9rem}.ghost:hover{background:#f3f7fb}.ghost:disabled{opacity:.55;cursor:wait}
@@ -136,6 +142,19 @@
 
       <section class="step" data-step="5" data-title="完成" hidden>
         <div class="step-head"><span class="step-no">STEP 5 / 5</span><h1>完成！傳給繪師吧</h1><p>確認內容後，選一種方式傳給繪師。要修改可以點上方的步驟。</p></div>
+        <details class="translate" id="translatePanel"><summary>委託外國繪師？翻譯成其他語言<span>選填</span></summary>
+          <ol class="t-steps">
+            <li><b>拿去翻譯</b>
+              <div class="t-row"><select id="targetLang" aria-label="要翻譯成的語言"><option value="ja">日文</option><option value="en">英文</option><option value="ko">韓文</option><option value="zh-CN">簡體中文</option><option value="fr">法文</option><option value="de">德文</option><option value="es">西班牙文</option><option value="th">泰文</option></select><button type="button" class="ghost" id="openTranslate">用 Google 翻譯開啟</button><button type="button" class="ghost" id="copyForTranslate">只複製文字</button></div>
+              <p class="t-tip">也可以把文字貼到 DeepL、ChatGPT 等翻譯工具。請整段一起翻譯，不要刪掉空行和換行，這樣圖片才能放回對的位置。</p></li>
+            <li><b>把翻譯結果貼回這裡</b>
+              <textarea id="translation" placeholder="把翻譯好的整段文字貼在這裡"></textarea>
+              <div class="t-row" style="margin-top:8px"><button type="button" class="ghost" id="pasteTranslation">貼上翻譯結果</button><button type="button" class="ghost" id="clearTranslation">清除翻譯</button></div>
+              <p class="t-status" id="translationStatus" role="status" aria-live="polite"></p></li>
+          </ol>
+          <input type="hidden" id="outputLang"><input type="hidden" id="translationSource">
+        </details>
+        <div class="lang-switch" id="langSwitch" hidden>傳送語言：<button type="button" data-mode="">中文原文</button><button type="button" data-mode="translated">翻譯版</button></div>
         <div class="preview" id="preview" aria-live="polite"><span class="placeholder">還沒有填寫內容。</span></div>
         <button type="button" class="big-copy" id="copy">複製文字</button>
         <h2 class="send-title">連同參考圖一起傳</h2>
@@ -236,20 +255,80 @@
         add('交付與補充',[['尺寸與比例',v('size')],['檔案格式',v('format')],['一定要保留',v('must')],['希望避免',v('avoid')],['參考資料',v('references')],['其他參考圖',others?`另附 ${others} 張`:'',true],['其他補充',v('notes')]],{kind:'delivery'});
         return {greeting:v('greeting')||DEFAULT_GREETING,sections,closing:v('closing')||DEFAULT_CLOSING};
       }
+      /* ---------- 翻譯 ---------- */
+      const DOC_TITLE='繪圖委託需求';
+      const tInput=document.getElementById('translation'), tStatus=document.getElementById('translationStatus'), outputLang=document.getElementById('outputLang'), tSource=document.getElementById('translationSource'), langSwitch=document.getElementById('langSwitch');
+      let active={text:'',data:null}, sourceText='';
+      const squash=t=>t.replace(/\r\n?/g,'\n').replace(/\n[ \t\u3000]*(?=\n)/g,'\n').replace(/\n{2,}/g,'\n').trim();
+      // 給翻譯用的文字：每段之間空一行、段內不留空行，翻譯回來後才能一行一行對回原本的欄位
+      function structure(data){
+        if(!data.sections.length)return [];
+        const blocks=[{kind:'title',lines:[DOC_TITLE]},{kind:'greeting',lines:squash(data.greeting).split('\n')}];
+        for(const sec of data.sections){const lines=[`【${sec.title}】`],map=[null];sec.rows.forEach(([label,value],ri)=>squash(value).split('\n').forEach((part,pi)=>{lines.push(pi?part:`${label}：${part}`);map.push({ri,start:!pi})}));blocks.push({kind:'section',section:sec,lines,map})}
+        blocks.push({kind:'closing',lines:squash(data.closing).split('\n')});
+        return blocks;
+      }
+      const parseBlocks=text=>text.replace(/\r\n?/g,'\n').split(/\n[ \t\u3000]*\n/).map(b=>b.split('\n').map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
+      const stripBrackets=t=>t.replace(/^[\[【〔「『(（<《〈\s]+|[\]】〕」』)）>》〉\s]+$/g,'').trim()||t;
+      function mapTranslation(blocks,parsed){
+        if(!blocks.length||parsed.length!==blocks.length||parsed.some((b,i)=>b.length!==blocks[i].lines.length))return null;
+        const out={docTitle:parsed[0].join(' '),greeting:parsed[1].join('\n'),closing:parsed.at(-1).join('\n'),sections:[]};
+        blocks.forEach((b,i)=>{if(b.kind!=='section')return;const lines=parsed[i];const rows=b.section.rows.map(r=>['','',r[2]]);
+          lines.forEach((line,li)=>{if(!li)return;const m=b.map[li],row=rows[m.ri];if(m.start){const k=line.search(/[：:﹕]/);if(k>0&&k<60){row[0]=line.slice(0,k).trim();row[1]=line.slice(k+1).trim()}else row[1]=line}else row[1]+=(row[1]?'\n':'')+line});
+          out.sections.push({...b.section,title:stripBrackets(lines[0]),rows})});
+        return out;
+      }
+      const detectLang=t=>{if(/[\u3040-\u30ff]/.test(t))return 'ja';if(/[\uac00-\ud7af]/.test(t))return 'ko';const han=(t.match(/[\u4e00-\u9fff]/g)||[]).length,latin=(t.match(/[A-Za-z\u00c0-\u024f\u0400-\u04ff]/g)||[]).length;if(han>latin)return document.getElementById('targetLang').value==='zh-CN'?'sc':'zh';return 'latin'};
+      const siteCredit=()=>/^https?:/.test(location.protocol)?(location.host+location.pathname).replace(/index\.html$/,'').replace(/\/$/,''):'畫委託需求整理所';
+      function computeActive(){
+        const tl=document.getElementById('targetLang');if(!tl.value)tl.value='ja';
+        const blocks=structure(latestData);
+        sourceText=blocks.map(b=>b.lines.join('\n')).join('\n\n');
+        const t=tInput.value.trim();
+        langSwitch.hidden=!t;
+        const useT=Boolean(t)&&outputLang.value==='translated';
+        [...langSwitch.querySelectorAll('button')].forEach(b=>{const on=(b.dataset.mode==='translated')===useT;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+        let msg='',cls='';
+        if(t){
+          const mapped=mapTranslation(blocks,parseBlocks(t)), lang=detectLang(t);
+          if(mapped){msg='✓ 已對應到原本的格式，參考圖會放回各自的位置。';cls='ok';active=useT?{text:t,data:{...mapped,translated:true,lang,credit:siteCredit()}}:null}
+          else{msg='⚠ 段落或行數和原文對不上（可能少了空行，或有幾行被合併）。仍然可以傳送，但參考圖會統一放在最後。建議重新整段翻譯。';cls='warn';const lines=t.replace(/\r\n?/g,'\n').split('\n');const first=lines.findIndex(l=>l.trim());active=useT?{text:t,data:{plain:true,translated:true,lang,credit:siteCredit(),docTitle:stripBrackets(lines[first].trim()),body:lines.slice(first+1).join('\n').trim(),greeting:'',closing:'',sections:[]}}:null}
+          if(tSource.value&&tSource.value!==sourceText){msg+=' 另外，翻譯之後需求內容有修改過，翻譯可能不是最新的，建議重新翻譯。';cls='warn'}
+          if(!useT)msg+=' 目前傳送的是中文原文。';
+        }
+        tStatus.textContent=msg;tStatus.className='t-status '+cls;
+        if(!t||!useT)active={text:latest,data:{...latestData,docTitle:DOC_TITLE,credit:'畫委託需求整理所',lang:'zh'}};
+      }
       function render(){
         latestData=collect();
         const {greeting,sections:secs,closing}=latestData;
         latest=secs.length?[greeting,...secs.map(s=>`【${s.title}】\n`+s.rows.map(([a,b])=>`${a}：${b}`).join('\n')),closing].join('\n\n'):'';
+        computeActive();
         form.querySelectorAll('details.more:not([open])').forEach(d=>{if([...d.querySelectorAll('input,textarea')].some(x=>x.value.trim()))d.open=true});
-        preview.textContent=latest||'還沒有填寫內容。可以點上方的步驟回去填寫。';preview.classList.toggle('placeholder',!latest);
+        if(tInput.value.trim())document.getElementById('translatePanel').open=true;
+        preview.textContent=active.text||'還沒有填寫內容。可以點上方的步驟回去填寫。';preview.classList.toggle('placeholder',!active.text);
         updateSteps();syncChips();
       }
+      const fireInput=()=>form.dispatchEvent(new Event('input',{bubbles:true}));
+      async function writeClipboard(text){try{await navigator.clipboard.writeText(text);return true}catch{const area=document.createElement('textarea');area.value=text;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();area.setSelectionRange(0,area.value.length);const ok=document.execCommand('copy');area.remove();return ok}}
+      function markSource(){render();tSource.value=sourceText;fireInput()}
+      document.getElementById('copyForTranslate').addEventListener('click',async()=>{render();if(!sourceText){showToast('請先填寫至少一項需求。');return}markSource();showToast(await writeClipboard(sourceText)?'已複製，請貼到翻譯工具。':'複製失敗，請再試一次。')});
+      document.getElementById('openTranslate').addEventListener('click',()=>{
+        render();if(!sourceText){showToast('請先填寫至少一項需求。');return}
+        markSource();const copied=writeClipboard(sourceText);
+        const short=sourceText.length<=1200, tl=document.getElementById('targetLang').value;
+        window.open(`https://translate.google.com/?sl=zh-TW&tl=${tl}${short?'&text='+encodeURIComponent(sourceText):''}&op=translate`,'_blank','noopener');
+        copied.then(ok=>showToast(short?'已開啟 Google 翻譯。翻好後按右下角的複製，再回來貼上。':ok?'文字較長，已複製好，請在翻譯頁面貼上。':'請回來按「只複製文字」再貼到翻譯頁面。'));
+      });
+      document.getElementById('pasteTranslation').addEventListener('click',async()=>{try{const t=await navigator.clipboard.readText();if(!t.trim()){showToast('剪貼簿是空的，請先複製翻譯結果。');return}tInput.value=t;tInput.dispatchEvent(new Event('input',{bubbles:true}))}catch{tInput.focus();showToast('請在框內長按（或按 Ctrl+V）貼上。')}});
+      document.getElementById('clearTranslation').addEventListener('click',()=>{if(tInput.value.trim()&&!confirm('要清除翻譯內容嗎？'))return;tInput.value='';outputLang.value='';tSource.value='';fireInput()});
+      tInput.addEventListener('input',()=>{const has=Boolean(tInput.value.trim());outputLang.value=has?'translated':'';if(has&&!tSource.value)tSource.value=sourceText});
+      langSwitch.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;outputLang.value=b.dataset.mode;fireInput();showToast(b.dataset.mode?'改為傳送翻譯版':'改為傳送中文原文')});
       function showToast(text){toast.textContent=text;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),2200)}
       async function copyMessage(){
         render();
-        if(!latest)return '請先填寫至少一項需求。';
-        try{await navigator.clipboard.writeText(latest);return '已複製，可以貼到與繪師的對話中。'}
-        catch{const area=document.createElement('textarea');area.value=latest;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();area.setSelectionRange(0,area.value.length);const ok=document.execCommand('copy');area.remove();return ok?'已複製，可以貼到與繪師的對話中。':'複製失敗，請選取預覽文字後手動複製。'}
+        if(!active.text)return '請先填寫至少一項需求。';
+        return await writeClipboard(active.text)?(active.data.translated?'已複製翻譯版，可以貼到與繪師的對話中。':'已複製，可以貼到與繪師的對話中。'):'複製失敗，請選取預覽文字後手動複製。';
       }
       document.getElementById('addCharacter').addEventListener('click',()=>{const card=addCharacter();card.querySelector('[data-key="name"]').focus({preventScroll:true});card.scrollIntoView({behavior:'smooth',block:'start'})});
       container.addEventListener('click',e=>{
@@ -263,7 +342,7 @@
       const tokens=el=>el.value.split('、').map(x=>x.trim()).filter(Boolean);
       form.addEventListener('click',e=>{const chip=e.target.closest('.chips button');if(!chip)return;const input=document.getElementById(chip.parentElement.dataset.for);const list=tokens(input);const i=list.indexOf(chip.textContent);if(i<0)list.push(chip.textContent);else list.splice(i,1);input.value=list.join('、');input.dispatchEvent(new Event('input',{bubbles:true}))});
       function syncChips(){form.querySelectorAll('.chips').forEach(group=>{const list=tokens(document.getElementById(group.dataset.for));[...group.children].forEach(b=>{b.classList.toggle('on',list.includes(b.textContent));b.setAttribute('aria-pressed',list.includes(b.textContent))})})}
-      window.getCommissionExportData=()=>{render();return {text:latest,data:latestData,cards:[...container.children]}};
+      window.getCommissionExportData=()=>{render();return {text:active.text,data:active.data,cards:[...container.children]}};
       window.commissionCharacters={
         setCount(n){n=Math.max(1,n|0);while(container.children.length<n)addCharacter();while(container.children.length>n)container.lastElementChild.querySelector('.remove').click()},
         notify:showToast,
@@ -274,7 +353,7 @@
       if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117c" defer></script>
-  <script src="./draft.js?v=20261117b" defer></script>
+  <script src="./export.js?v=20261117d" defer></script>
+  <script src="./draft.js?v=20261117d" defer></script>
 </body>
 </html>
