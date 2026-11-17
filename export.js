@@ -175,7 +175,7 @@
     const pictures = new Map(); let failed = 0;
     for (const card of all) {
       const list = [];
-      for (const item of itemsOf(card)) { const image = await decode(item); if (image) list.push(image); else failed++; }
+      for (const item of itemsOf(card)) { const image = await decode(item); if (image) list.push({ image, item }); else failed++; }
       pictures.set(card, list);
     }
     const measure = document.createElement('canvas').getContext('2d');
@@ -211,14 +211,17 @@
       const cols = list.length === 1 ? 1 : 2, gap = 20;
       const colW = (W - 2 * M - gap * (cols - 1)) / cols, maxH = cols === 1 ? 640 : 560;
       for (let i = 0; i < list.length; i += cols) {
-        const cells = list.slice(i, i + cols).map(image => {
-          const scale = Math.min(1, colW / image.naturalWidth, maxH / image.naturalHeight);
-          return { image, w: Math.max(1, Math.round(image.naturalWidth * scale)), h: Math.max(1, Math.round(image.naturalHeight * scale)) };
+        const cells = list.slice(i, i + cols).map(({ image, item }) => {
+          // 版面上的顯示大小；小圖最多放大到原本的 2 倍以內（輸出為 2 倍解析度，不會變糊）
+          const scale = Math.min(2, colW / image.naturalWidth, maxH / image.naturalHeight);
+          return { image, item, w: Math.max(1, Math.round(image.naturalWidth * scale)), h: Math.max(1, Math.round(image.naturalHeight * scale)) };
         });
         const rowH = Math.max(...cells.map(c => c.h));
-        blocks.push({ h: rowH + 20, draw(ctx, y) {
+        blocks.push({ h: rowH + 20, draw(ctx, y, placements) {
           cells.forEach((cell, column) => {
             const x = M + column * (colW + gap) + (colW - cell.w) / 2, top = y + (rowH - cell.h) / 2;
+            // PDF：只記錄位置，之後把原圖直接嵌入
+            if (placements) { placements.push({ item: cell.item, image: cell.image, x, y: top, w: cell.w, h: cell.h }); return; }
             ctx.save(); roundedPath(ctx, x, top, cell.w, cell.h, 14); ctx.clip();
             ctx.drawImage(cell.image, x, top, cell.w, cell.h); ctx.restore();
           });
@@ -270,7 +273,8 @@
     if (page.length) flush();
     return { pages, failed };
   }
-  function renderPage(page, index, total, fixedHeight) {
+  function renderPage(page, index, total, fixedHeight, placements = null, scale = SCALE) {
+    const SCALE = scale;
     const height = fixedHeight ? PAGE_H : Math.ceil(page.end + FOOT);
     const canvas = document.createElement('canvas');
     canvas.width = W * SCALE; canvas.height = height * SCALE;
@@ -279,7 +283,7 @@
     ctx.scale(SCALE, SCALE);
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, height);
     ctx.imageSmoothingQuality = 'high'; ctx.textBaseline = 'top';
-    for (const { block, y } of page.items) block.draw(ctx, y);
+    for (const { block, y } of page.items) block.draw(ctx, y, placements);
     const fy = height - FOOT + 30;
     ctx.fillStyle = C.line; ctx.fillRect(M, fy, W - 2 * M, 2);
     ctx.font = F.small; ctx.fillStyle = C.sub;
@@ -292,25 +296,120 @@
   const jpegFrom = canvas => new Promise((resolve, reject) =>
     canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('無法產生檔案，請減少圖片後再試。')), 'image/jpeg', 0.92));
 
-  async function pdfFromJpegs(pages) {
-    const encoder = new TextEncoder(), chunks = [], offsets = [0]; let length = 0;
+  /* ---------- PDF：文字頁不失真、參考圖以原始解析度嵌入 ---------- */
+  const MAX_PIXELS = 16_000_000; // 手機瀏覽器單張畫布的安全上限
+  async function deflate(bytes) {
+    if (typeof CompressionStream !== 'function') return null;
+    try { return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer()); }
+    catch { return null; }
+  }
+  const blobBytes = async blob => new Uint8Array(await blob.arrayBuffer());
+  async function canvasObject(canvas, lossless) {
+    const { width, height } = canvas;
+    if (lossless) {
+      const rgba = canvas.getContext('2d').getImageData(0, 0, width, height).data;
+      const rgb = new Uint8Array(width * height * 3);
+      for (let i = 0, j = 0; i < rgba.length; i += 4) { rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2]; }
+      const packed = await deflate(rgb);
+      if (packed) return { width, height, dict: '/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode', bytes: packed };
+    }
+    const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('無法產生 PDF，請減少圖片後再試。')), 'image/jpeg', 0.95));
+    return { width, height, dict: '/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode', bytes: await blobBytes(blob) };
+  }
+  function parseJpeg(b) {
+    if (b[0] !== 0xff || b[1] !== 0xd8) return null;
+    let p = 2, orientation = 1, info = null;
+    while (p + 4 < b.length && b[p] === 0xff) {
+      const marker = b[p + 1], size = (b[p + 2] << 8) | b[p + 3];
+      if (marker === 0xda) break;
+      if (marker === 0xe1 && b[p + 4] === 0x45 && b[p + 5] === 0x78 && b[p + 6] === 0x69 && b[p + 7] === 0x66) {
+        const t = p + 10, le = b[t] === 0x49;
+        const u16 = o => le ? b[o] | (b[o + 1] << 8) : (b[o] << 8) | b[o + 1];
+        const u32 = o => le ? (b[o] | (b[o + 1] << 8) | (b[o + 2] << 16) | (b[o + 3] << 24)) >>> 0 : ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+        const ifd = t + u32(t + 4), count = u16(ifd);
+        for (let i = 0; i < count && ifd + 14 + i * 12 < b.length; i++) if (u16(ifd + 2 + i * 12) === 0x0112) orientation = u16(ifd + 10 + i * 12);
+      }
+      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc)
+        info = { height: (b[p + 5] << 8) | b[p + 6], width: (b[p + 7] << 8) | b[p + 8], components: b[p + 9] };
+      p += 2 + size;
+    }
+    return info && { ...info, orientation };
+  }
+  function parsePng(b) {
+    const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (!signature.every((v, i) => b[i] === v)) return null;
+    const u32 = o => ((b[o] << 24) | (b[o + 1] << 16) | (b[o + 2] << 8) | b[o + 3]) >>> 0;
+    let p = 8, head = null, transparent = false; const data = [];
+    while (p + 8 <= b.length) {
+      const size = u32(p), type = String.fromCharCode(b[p + 4], b[p + 5], b[p + 6], b[p + 7]);
+      if (type === 'IHDR') head = { width: u32(p + 8), height: u32(p + 12), depth: b[p + 16], color: b[p + 17], interlace: b[p + 20] };
+      if (type === 'tRNS') transparent = true;
+      if (type === 'IDAT') data.push(b.subarray(p + 8, p + 8 + size));
+      if (type === 'IEND') break;
+      p += 12 + size;
+    }
+    if (!head || head.depth !== 8 || head.interlace || transparent || (head.color !== 2 && head.color !== 0) || !data.length) return null;
+    const bytes = new Uint8Array(data.reduce((sum, part) => sum + part.length, 0));
+    let offset = 0; for (const part of data) { bytes.set(part, offset); offset += part.length; }
+    return { ...head, colors: head.color === 2 ? 3 : 1, bytes };
+  }
+  // 把一張參考圖變成 PDF 影像物件：能原封不動放進去的就不重新壓縮
+  async function originalObject({ item, image }) {
+    const bytes = await blobBytes(item.file);
+    const jpeg = parseJpeg(bytes);
+    if (jpeg && jpeg.orientation <= 1 && (jpeg.components === 3 || jpeg.components === 1))
+      return { width: jpeg.width, height: jpeg.height, dict: `/ColorSpace /${jpeg.components === 3 ? 'DeviceRGB' : 'DeviceGray'} /BitsPerComponent 8 /Filter /DCTDecode`, bytes };
+    const png = jpeg ? null : parsePng(bytes);
+    if (png) return { width: png.width, height: png.height, bytes: png.bytes,
+      dict: `/ColorSpace /${png.colors === 3 ? 'DeviceRGB' : 'DeviceGray'} /BitsPerComponent 8 /Filter /FlateDecode /DecodeParms << /Predictor 15 /Colors ${png.colors} /BitsPerComponent 8 /Columns ${png.width} >>` };
+    // 其他情況（透明背景 PNG、轉過方向的手機照片、WebP、HEIC…）：以原始尺寸重新繪製
+    const shrink = Math.min(1, Math.sqrt(MAX_PIXELS / (image.naturalWidth * image.naturalHeight)));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * shrink)); canvas.height = Math.max(1, Math.round(image.naturalHeight * shrink));
+    const ctx = canvas.getContext('2d', { alpha: false });
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingQuality = 'high'; ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const lossless = !jpeg && (/^image\/(png|gif|bmp)$/.test(item.file.type) || /\.(png|gif|bmp)$/i.test(item.file.name));
+    const result = await canvasObject(canvas, lossless);
+    canvas.width = canvas.height = 0;
+    return result;
+  }
+  async function buildPdf(pages, onProgress) {
+    const encoder = new TextEncoder(), chunks = [], offsets = [0]; let length = 0, nextId = 3;
     const push = data => { const bytes = typeof data === 'string' ? encoder.encode(data) : data; chunks.push(bytes); length += bytes.length; };
     const object = (id, body) => { offsets[id] = length; push(`${id} 0 obj\n`); body(); push('\nendobj\n'); };
+    const imageObject = image => {
+      const id = nextId++;
+      object(id, () => { push(`<< /Type /XObject /Subtype /Image /Width ${image.width} /Height ${image.height} ${image.dict} /Length ${image.bytes.length} >>\nstream\n`); push(image.bytes); push('\nendstream'); });
+      return id;
+    };
     push(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a, 0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));
-    object(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
-    object(2, () => push(`<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + i * 3} 0 R`).join(' ')}] /Count ${pages.length} >>`));
+    const PW = 595.28, PH = 841.89, kx = PW / W, ky = PH / PAGE_H, n = v => v.toFixed(2);
+    const embedded = new Map(), pageIds = [];
     for (let i = 0; i < pages.length; i++) {
-      const { blob, width, height } = pages[i], bytes = new Uint8Array(await blob.arrayBuffer());
-      const page = 3 + i * 3, image = page + 1, content = page + 2;
-      object(page, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${image} 0 R >> >> /Contents ${content} 0 R >>`));
-      object(image, () => { push(`<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${bytes.length} >>\nstream\n`); push(bytes); push('\nendstream'); });
-      const commands = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+      onProgress?.(i + 1, pages.length);
+      const placements = [];
+      const canvas = renderPage(pages[i], i, pages.length, true, placements);
+      const background = imageObject(await canvasObject(canvas, true));
+      canvas.width = canvas.height = 0;
+      let commands = `q ${n(PW)} 0 0 ${n(PH)} 0 0 cm /Bg Do Q`, resources = `/Bg ${background} 0 R`;
+      for (let j = 0; j < placements.length; j++) {
+        const place = placements[j];
+        if (!embedded.has(place.item)) embedded.set(place.item, imageObject(await originalObject(place)));
+        resources += ` /Im${j} ${embedded.get(place.item)} 0 R`;
+        commands += `\nq ${n(place.w * kx)} 0 0 ${n(place.h * ky)} ${n(place.x * kx)} ${n(PH - (place.y + place.h) * ky)} cm /Im${j} Do Q`;
+      }
+      const content = nextId++, page = nextId++;
       object(content, () => push(`<< /Length ${commands.length} >>\nstream\n${commands}\nendstream`));
+      object(page, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${n(PW)} ${n(PH)}] /Resources << /XObject << ${resources} >> >> /Contents ${content} 0 R >>`));
+      pageIds.push(page);
     }
+    object(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+    object(2, () => push(`<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`));
     const xref = length;
-    push(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);
-    for (let i = 1; i < offsets.length; i++) push(`${String(offsets[i]).padStart(10, '0')} 00000 n \n`);
-    push(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+    push(`xref\n0 ${nextId}\n0000000000 65535 f \n`);
+    for (let i = 1; i < nextId; i++) push(`${String(offsets[i]).padStart(10, '0')} 00000 n \n`);
+    push(`trailer\n<< /Size ${nextId} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
     return new Blob(chunks, { type: 'application/pdf' });
   }
 
@@ -357,18 +456,23 @@
     button.disabled = true; button.querySelector('b').textContent = '製作中…'; say('');
     try {
       const { pages, failed } = await buildPages();
+      const pdf = mode === 'pdf', label = button.querySelector('b');
       const rendered = [];
       for (let i = 0; i < pages.length; i++) {
-        const canvas = renderPage(pages[i], i, pages.length, mode === 'pdf');
-        rendered.push({ blob: await jpegFrom(canvas), width: canvas.width, height: canvas.height });
+        // PDF 的預覽用小圖即可；實際檔案另外以原圖製作
+        const canvas = renderPage(pages[i], i, pages.length, pdf, null, pdf ? 1 : SCALE);
+        rendered.push({ blob: await jpegFrom(canvas) });
         canvas.width = canvas.height = 0;
       }
       const base = baseName(), skipped = failed ? `（有 ${failed} 張圖片這台裝置無法讀取，已略過）` : '';
-      const files = mode === 'pdf'
-        ? [new File([await pdfFromJpegs(rendered)], `${base}.pdf`, { type: 'application/pdf' })]
+      const files = pdf
+        ? [new File([await buildPdf(pages, (i, total) => { label.textContent = `製作中 ${i}/${total}…`; })], `${base}.pdf`, { type: 'application/pdf' })]
         : rendered.map((page, i) => new File([page.blob], rendered.length > 1 ? `${base}-${i + 1}.jpg` : `${base}.jpg`, { type: 'image/jpeg' }));
-      const title = mode === 'pdf' ? 'PDF 做好了' : '圖片做好了';
-      const note = (mode === 'pdf' ? `一份 PDF，共 ${rendered.length} 頁。` : rendered.length > 1 ? `共 ${rendered.length} 張圖片，請依順序傳送。` : '一張圖片。') + skipped;
+      const mb = files[0].size / 1048576;
+      const title = pdf ? 'PDF 做好了' : '圖片做好了';
+      const note = (pdf
+        ? `一份 PDF，共 ${rendered.length} 頁，${mb < 0.1 ? '不到 0.1' : mb.toFixed(1)} MB。參考圖以原始解析度放入，放大也清楚。${mb > 20 ? '檔案較大，Email 可能無法附加，可改用雲端連結傳送。' : ''}`
+        : rendered.length > 1 ? `共 ${rendered.length} 張圖片，請依順序傳送。需要原畫質請用 PDF 或「傳送原圖」。` : '一張圖片。需要原畫質請用 PDF 或「傳送原圖」。') + skipped;
       if (typeof dialog.showModal !== 'function') { await downloadFiles(files); say('已下載。' + skipped); return; }
       openResult(title, note, files, rendered.map(page => page.blob));
     } catch (error) { say(error.message || '製作失敗，請再試一次。'); }

@@ -141,8 +141,8 @@
         <h2 class="send-title">連同參考圖一起傳</h2>
         <p class="send-sub">按一下就會自動排好版，不需要任何設定。</p>
         <div class="send-grid">
-          <button type="button" class="send" id="makeImages"><b>存成圖片</b><span>文字和參考圖排在一起。適合社群私訊、Discord、LINE</span></button>
-          <button type="button" class="send" id="makePdf"><b>存成 PDF</b><span>一份完整文件。適合 Email</span></button>
+          <button type="button" class="send" id="makeImages"><b>存成圖片</b><span>方便快速瀏覽。適合社群私訊、Discord、LINE</span></button>
+          <button type="button" class="send" id="makePdf"><b>存成 PDF</b><span>參考圖保持原始畫質，放大也清楚。適合 Email</span></button>
           <button type="button" class="send" id="shareOriginals"><b>傳送原圖</b><span>文字加上所有原始參考圖，畫質不壓縮</span></button>
         </div>
         <p class="feedback" id="feedback" role="status" aria-live="polite"></p>
@@ -274,7 +274,7 @@
       if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117b" defer></script>
+  <script src="./export.js?v=20261117c" defer></script>
   <script src="./draft.js?v=20261117b" defer></script>
 </body>
 </html>
