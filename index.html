@@ -278,7 +278,8 @@
       // 去掉 AI 可能加上的程式碼區塊標記、分隔線
       const cleanAI=text=>text.replace(/\r\n?/g,'\n').split('\n').filter(l=>!/^\s*(```[\w-]*|={3,})\s*$/.test(l)).join('\n').trim();
       const parseBlocks=text=>cleanAI(text).split(/\n[ \t\u3000]*\n/).map(b=>b.split('\n').map(l=>l.trim()).filter(Boolean)).filter(b=>b.length);
-      const stripBrackets=t=>t.replace(/^[\[【〔「『(（<《〈\s]+|[\]】〕」』)）>》〉\s]+$/g,'').trim()||t;
+      // 只拿掉標題最外層的一組【】或 [ ]，名字裡的括號（例如外文拼法）要保留
+      const stripBrackets=t=>{const m=t.trim().match(/^[【\[〔](.*)[】\]〕]$/);return (m?m[1]:t).trim()||t};
       function mapTranslation(blocks,parsed){
         if(!blocks.length||parsed.length!==blocks.length||parsed.some((b,i)=>b.length!==blocks[i].lines.length))return null;
         const out={docTitle:parsed[0].join(' '),greeting:parsed[1].join('\n'),closing:parsed.at(-1).join('\n'),sections:[]};
@@ -371,7 +372,7 @@ ${sourceText}
       if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},romaji:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117h" defer></script>
+  <script src="./export.js?v=20261117i" defer></script>
   <script src="./draft.js?v=20261117h" defer></script>
 </body>
 </html>
