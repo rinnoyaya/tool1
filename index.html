@@ -50,6 +50,7 @@
     .thumb.bad img{opacity:.25}.thumb.bad span{position:absolute;inset:auto 0 0 0;background:#a14b4b;color:#fff;font-size:.7rem;padding:4px;text-align:center}
     .add-image{aspect-ratio:1;border:0;border-radius:12px;background:#e9f0f7;color:var(--brand);font-weight:700;font-size:.86rem;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}.add-image span{font-size:1.7rem;line-height:1}.add-image:hover{background:#dce8f3}
     /* 快速選項 */
+.field-note{margin:0;font-size:.8rem;color:#7a8794;line-height:1.55}
     .chips{display:flex;flex-wrap:wrap;gap:8px}.chips button{border:1px solid #cfd8e1;border-radius:999px;background:#fff;color:var(--sub);padding:7px 14px;font-size:.86rem;font-weight:600;min-height:36px}.chips button.on{background:var(--brand);border-color:var(--brand);color:#fff}
     /* 完成頁 */
     .preview{white-space:pre-wrap;overflow-wrap:anywhere;min-height:220px;max-height:46vh;overflow:auto;background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:18px;line-height:1.8;font-size:.93rem}.placeholder{color:#8a96a3}
@@ -130,7 +131,8 @@
         <div class="step-head"><span class="step-no">STEP 4 / 5</span><h1>交付與注意事項</h1><p>尺寸、格式和一定要注意的地方。</p></div>
         <div class="grid">
           <div class="field"><label for="size">尺寸與比例</label><input id="size" placeholder="例：寬 3000 × 高 4000 px（3:4）"></div>
-          <div class="field"><label for="format">檔案格式</label><input id="format" placeholder="例：PNG"><div class="chips" data-for="format"><button type="button">PNG</button><button type="button">JPG</button><button type="button">PSD</button><button type="button">透明背景</button></div></div>
+          <div class="field"><label for="colorMode">色彩模式</label><input id="colorMode" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="colorMode"><button type="button">RGB</button><button type="button">CMYK</button><button type="button">請繪師建議</button></div><p class="field-note">放網路、社群、螢幕看選 RGB；要印刷成周邊或實體選 CMYK。</p></div>
+          <div class="field full"><label for="format">檔案格式</label><input id="format" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="format"><button type="button">PNG</button><button type="button">JPG</button><button type="button">PSD</button><button type="button">CLIP</button><button type="button">透明背景</button></div><p class="field-note">選項裡沒有的格式可以直接打字，例如向量檔（AI、SVG、EPS）、PDF、TIFF；要分層檔也可以寫「PSD（保留圖層）」。</p></div>
           <div class="field full"><label for="must">一定要保留的重點</label><textarea id="must" placeholder="例：狐耳和尾巴尖端是白色"></textarea></div>
           <div class="field full"><label for="avoid">希望避免的畫法</label><textarea id="avoid" placeholder="例：不要改變圍巾顏色；不要加入文字"></textarea></div>
           <div class="field full" id="otherReferenceUpload"><label>其他參考圖 <span class="hint">背景、姿勢、服裝、氛圍</span></label><div class="upload"><div class="image-list"></div><input id="otherImages" class="image-input" type="file" accept="image/*" multiple hidden><div class="upload-note">可一次選多張。電腦可以把圖片拖進來，或直接貼上（Ctrl+V）。</div></div></div>
@@ -259,7 +261,7 @@
           add(`角色 ${i+1}${name?'｜'+name:''}`,[['名稱',name],['身分／關係',get('role')],['外觀',get('appearance')],['服裝與配件',get('clothing')],['個性與感覺',get('personality')],['參考圖',get('reference')],['設定圖',n?`另附 ${n} 張`:'',true]],{card})});
         add('畫面需求',[['情境與構圖',v('scene')],['姿勢／表情／互動',v('interaction')],['背景與氛圍',v('background')],['畫風與色彩',v('style')]]);
         const others=imageCount(document.getElementById('otherReferenceUpload'));
-        add('交付與補充',[['尺寸與比例',v('size')],['檔案格式',v('format')],['一定要保留',v('must')],['希望避免',v('avoid')],['參考資料',v('references')],['其他參考圖',others?`另附 ${others} 張`:'',true],['其他補充',v('notes')]],{kind:'delivery'});
+        add('交付與補充',[['尺寸與比例',v('size')],['色彩模式',v('colorMode')],['檔案格式',v('format')],['一定要保留',v('must')],['希望避免',v('avoid')],['參考資料',v('references')],['其他參考圖',others?`另附 ${others} 張`:'',true],['其他補充',v('notes')]],{kind:'delivery'});
         return {greeting:v('greeting')||DEFAULT_GREETING,sections,closing:v('closing')||DEFAULT_CLOSING};
       }
       /* ---------- 翻譯 ---------- */
@@ -372,7 +374,7 @@ ${sourceText}
       if(document.modelContext?.registerTool){try{const tool={name:'set_commission_brief',title:'填寫繪圖委託需求',description:'一次設定委託欄位與角色資料，更新頁面上的委託訊息預覽。',inputSchema:{type:'object',properties:{fields:{type:'object',additionalProperties:{type:'string'}},characters:{type:'array',items:{type:'object',properties:{name:{type:'string'},romaji:{type:'string'},role:{type:'string'},appearance:{type:'string'},clothing:{type:'string'},personality:{type:'string'},reference:{type:'string'}},additionalProperties:false}}},additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input){if(!input||typeof input!=='object'||Array.isArray(input))throw Error('請提供有效的委託資料');if(input.fields){if(typeof input.fields!=='object'||Array.isArray(input.fields))throw Error('fields 必須是物件');for(const [key,val] of Object.entries(input.fields)){const el=document.getElementById(key);if(!el||!form.contains(el)||el.matches('[data-key],[type=file],[type=range]')||!el.matches('input,textarea')||typeof val!=='string')throw Error('無效的欄位：'+key)}}if(input.characters){if(!Array.isArray(input.characters)||!input.characters.length||input.characters.some(c=>!c||typeof c!=='object'||Array.isArray(c)||Object.entries(c).some(([k,val])=>!CHARACTER_KEYS.includes(k)||typeof val!=='string')))throw Error('角色資料格式不正確')}for(const [key,val] of Object.entries(input.fields||{}))document.getElementById(key).value=val;if(input.characters){window.commissionCharacters.setCount(input.characters.length);input.characters.forEach((c,i)=>{const card=container.children[i];card.querySelectorAll('[data-key]').forEach(el=>{el.value=typeof c[el.dataset.key]==='string'?c[el.dataset.key]:''})});renumber()}render();window.dispatchEvent(new Event('commission:changed'));return {message:latest,characterCount:container.children.length}}};Promise.resolve(document.modelContext.registerTool(tool)).catch(()=>{})}catch{}}
     })();
   </script>
-  <script src="./export.js?v=20261117i" defer></script>
-  <script src="./draft.js?v=20261117h" defer></script>
+  <script src="./export.js?v=20261118" defer></script>
+  <script src="./draft.js?v=20261118" defer></script>
 </body>
 </html>

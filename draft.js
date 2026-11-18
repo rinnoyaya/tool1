@@ -5,7 +5,7 @@
   const imageDraft = window.commissionImageDraft;
   const textKey = 'commissionBriefTextDraftV1';
   const fieldIds = ['workType', 'purpose', 'budget', 'deadline', 'scene', 'interaction',
-    'background', 'style', 'size', 'format', 'must', 'avoid', 'references', 'notes', 'greeting', 'closing',
+    'background', 'style', 'size', 'colorMode', 'format', 'must', 'avoid', 'references', 'notes', 'greeting', 'closing',
     'targetLang', 'translation', 'outputLang', 'translationSource'];
   let restoring = true, textTimer, imageTimer;
 
