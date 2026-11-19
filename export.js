@@ -117,6 +117,8 @@
 
   window.commissionImageDraft = {
     count(card) { return itemsOf(card).length; },
+    files(card) { return itemsOf(card).map(item => item.file); },
+    addTo(card, files) { addFiles(card, files); },
     release(card) { releaseFiles(card); imagesChanged(); },
     snapshot() {
       const pack = card => itemsOf(card).map(({ file }) => ({ name: file.name, type: file.type, lastModified: file.lastModified, blob: file }));

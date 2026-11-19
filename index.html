@@ -81,6 +81,12 @@
     .result-shell{display:flex;flex-direction:column;max-height:min(92vh,900px)}.result-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px}.result-head h2{margin:0;font-size:1.2rem}
     .result-head button{border:0;background:var(--soft);border-radius:50%;width:38px;height:38px;font-size:1.2rem}
     .result-pages{overflow:auto;padding:4px 20px 16px;display:flex;flex-direction:column;gap:12px;background:var(--soft);border-block:1px solid var(--line)}.result-pages img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}.result-pages img:first-child{margin-top:12px}
+    .lib-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #d6e3ef;background:#f3f7fb;border-radius:14px;padding:10px 12px 10px 16px;margin:0 0 14px;font-size:.9rem;color:var(--sub)}.lib-bar b{color:var(--brand)}.lib-bar .ghost{min-height:42px;padding:8px 14px}
+    .lib-list{overflow:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px;background:var(--soft);border-block:1px solid var(--line)}
+    .lib-item{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
+    .lib-thumb{width:64px;height:64px;border-radius:10px;background:#eef1f4;object-fit:cover;display:grid;place-items:center;color:#9aa6b2;font-weight:800;font-size:1.3rem}
+    .lib-info{min-width:0}.lib-info strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lib-info span{display:block;color:var(--sub);font-size:.8rem;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lib-acts{display:flex;flex-direction:column;gap:6px}.lib-acts .big{min-height:40px;padding:8px 16px}.lib-acts .text-btn{text-align:center;padding:2px 0}
     .result-foot{padding:14px 20px calc(16px + env(safe-area-inset-bottom))}.result-foot p{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.result-actions{display:flex;gap:10px}.result-actions button{flex:1}.result-actions .ghost{min-height:48px}
     @media(max-width:620px){
       .top{padding:16px 16px 4px}.author{font-size:.78rem}.steps{padding:0 16px}.steps button span.label{display:none}.steps button{padding-top:4px}
@@ -113,6 +119,7 @@
 
       <section class="step" data-step="2" data-title="角色" hidden>
         <div class="step-head"><span class="step-no">STEP 2 / 5</span><h1>畫面裡有誰？</h1><p>每位角色一張卡片，可以附上設定圖。</p></div>
+        <div class="lib-bar" id="libraryBar" hidden><span>角色庫裡有 <b id="libraryCount">0</b> 位角色</span><button type="button" class="ghost" id="openLibrary">從角色庫帶入</button></div>
         <div id="characters"></div>
         <button class="add" id="addCharacter" type="button">＋ 新增一位角色</button>
       </section>
@@ -200,7 +207,13 @@
     <div class="result-foot"><p id="resultNote" role="status" aria-live="polite"></p><div class="result-actions"><button type="button" class="ghost" id="resultDownload">下載到裝置</button><button type="button" class="big" id="resultShare">分享／儲存到相簿</button></div></div>
   </div></dialog>
 
-  <template id="characterTemplate"><div class="character"><div class="character-head"><strong class="character-title"></strong><span class="char-tools"><button type="button" class="text-btn duplicate" title="複製這位角色的文字設定（不含圖片）">複製</button><button type="button" class="text-btn remove">移除</button></span></div><div class="grid">
+  <dialog class="result" id="libraryDialog" aria-labelledby="libraryTitle"><div class="result-shell">
+    <div class="result-head"><h2 id="libraryTitle">角色庫</h2><button type="button" id="closeLibrary" aria-label="關閉">×</button></div>
+    <div class="lib-list" id="libraryList"></div>
+    <div class="result-foot"><p>點「帶入」會加入這次的委託（含設定圖）。角色庫只存在這台裝置，清除草稿不會刪掉它；要更新角色，在角色卡片上再按一次「存到角色庫」。</p></div>
+  </div></dialog>
+
+  <template id="characterTemplate"><div class="character"><div class="character-head"><strong class="character-title"></strong><span class="char-tools"><button type="button" class="text-btn save-char" title="下次委託可以直接帶入這位角色（含設定圖）">存到角色庫</button><button type="button" class="text-btn duplicate" title="複製這位角色的文字設定（不含圖片）">複製</button><button type="button" class="text-btn remove">移除</button></span></div><div class="grid">
     <div class="field"><label>名稱／稱呼</label><input data-key="name" placeholder="例：露米"></div>
     <div class="field"><label>身分或關係</label><input data-key="role" placeholder="例：狐耳旅人"></div>
     <div class="field full"><label>外觀特徵</label><textarea data-key="appearance" placeholder="髮型、髮色、眼睛、種族特徵等。左右位置請寫清楚。"></textarea></div>
@@ -369,6 +382,8 @@ ${sourceText}
       function syncChips(){form.querySelectorAll('.chips[data-unit-for]').forEach(group=>{const u=unitOf(document.getElementById(group.dataset.unitFor).value);[...group.children].forEach(b=>{b.classList.toggle('on',b.textContent===u);b.setAttribute('aria-pressed',b.textContent===u)})});form.querySelectorAll('.chips[data-for]').forEach(group=>{const list=tokens(document.getElementById(group.dataset.for));[...group.children].forEach(b=>{b.classList.toggle('on',list.includes(b.textContent));b.setAttribute('aria-pressed',list.includes(b.textContent))})})}
       window.getCommissionExportData=()=>{render();return {text:active.text,data:active.data,cards:[...container.children]}};
       window.commissionCharacters={
+        add:values=>addCharacter(values),
+        isEmpty:card=>![...card.querySelectorAll('[data-key]')].some(x=>x.value.trim())&&!imageCount(card),
         setCount(n){n=Math.max(1,n|0);while(container.children.length<n)addCharacter();while(container.children.length>n)container.lastElementChild.querySelector('.remove').click()},
         notify:showToast,
       };
@@ -380,5 +395,6 @@ ${sourceText}
   </script>
   <script src="./export.js?v=20261118" defer></script>
   <script src="./draft.js?v=20261118" defer></script>
+  <script src="./library.js?v=20261119" defer></script>
 </body>
 </html>

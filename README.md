@@ -18,12 +18,14 @@
 
 委託外國繪師時，可以在第 5 步打開「用 AI 翻譯成其他語言」：按「複製翻譯指令」貼到 ChatGPT、Gemini 或 Claude（都有免費方案），把翻譯結果貼回來，之後複製文字、存成圖片、PDF、傳送原圖都會改用翻譯後的文字，參考圖也會放回各自角色的位置。
 
+常用的角色可以按角色卡片上的「存到角色庫」（文字和設定圖一起存），下次委託在第 2 步按「從角色庫帶入」即可。角色庫只存在這台裝置，清除草稿不會刪除。
+
 參考圖按「＋ 加入圖片」即可加入，電腦也可以拖曳或直接貼上（Ctrl+V）。所有排版都是自動的，不需要調整圖片大小或分頁。
 
 ## 上傳至 GitHub
 
 1. 將這個 ZIP 解壓縮。
-2. 將解壓後的 `index.html`、`export.js`、`draft.js`、`apple-touch-icon.png`、`.nojekyll` 和 `README.md` 上傳到儲存庫最外層（更新時直接覆蓋舊檔，使用者原本的草稿不受影響）。
+2. 將解壓後的 `index.html`、`export.js`、`draft.js`、`library.js`、`apple-touch-icon.png`、`.nojekyll` 和 `README.md` 上傳到儲存庫最外層（更新時直接覆蓋舊檔，使用者原本的草稿不受影響）。
 3. 在儲存庫的 **Settings → Pages** 選擇 **Deploy from a branch**，設定 `main` 分支及 `/ (root)` 資料夾後儲存。
 
 草稿保存在使用者自己的瀏覽器（文字使用 localStorage、圖片使用 IndexedDB），不會上傳到網站，也不會在不同裝置間同步；需要換裝置時請使用「匯出備份檔」。
