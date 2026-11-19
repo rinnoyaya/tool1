@@ -130,7 +130,7 @@
       <section class="step" data-step="4" data-title="交付" hidden>
         <div class="step-head"><span class="step-no">STEP 4 / 5</span><h1>交付與注意事項</h1><p>尺寸、格式和一定要注意的地方。</p></div>
         <div class="grid">
-          <div class="field"><label for="size">尺寸與比例</label><input id="size" placeholder="例：寬 3000 × 高 4000 px（3:4）"></div>
+          <div class="field"><label for="size">尺寸與比例</label><input id="size" placeholder="例：寬 3000 × 高 4000 px（3:4）"><div class="chips" data-unit-for="size" aria-label="尺寸單位"><button type="button">px</button><button type="button">mm</button><button type="button">cm</button></div><p class="field-note">點單位就會換上。要印刷時常用 mm 或 cm，建議再寫上解析度，例如「300 dpi」。</p></div>
           <div class="field"><label for="colorMode">色彩模式</label><input id="colorMode" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="colorMode"><button type="button">RGB</button><button type="button">CMYK</button><button type="button">請繪師建議</button></div><p class="field-note">放網路、社群、螢幕看選 RGB；要印刷成周邊或實體選 CMYK。</p></div>
           <div class="field full"><label for="format">檔案格式</label><input id="format" placeholder="點下面的選項，或自己輸入"><div class="chips" data-for="format"><button type="button">PNG</button><button type="button">JPG</button><button type="button">PSD</button><button type="button">CLIP</button><button type="button">透明背景</button></div><p class="field-note">選項裡沒有的格式可以直接打字，例如向量檔（AI、SVG、EPS）、PDF、TIFF；要分層檔也可以寫「PSD（保留圖層）」。</p></div>
           <div class="field full"><label for="must">一定要保留的重點</label><textarea id="must" placeholder="例：狐耳和尾巴尖端是白色"></textarea></div>
@@ -361,8 +361,12 @@ ${sourceText}
       document.getElementById('copy').addEventListener('click',async()=>{const msg=await copyMessage();feedback.textContent=msg;showToast(msg)});
       /* 快速選項：點一下加入或移除 */
       const tokens=el=>el.value.split('、').map(x=>x.trim()).filter(Boolean);
-      form.addEventListener('click',e=>{const chip=e.target.closest('.chips button');if(!chip)return;const input=document.getElementById(chip.parentElement.dataset.for);const list=tokens(input);const i=list.indexOf(chip.textContent);if(i<0)list.push(chip.textContent);else list.splice(i,1);input.value=list.join('、');input.dispatchEvent(new Event('input',{bubbles:true}))});
-      function syncChips(){form.querySelectorAll('.chips').forEach(group=>{const list=tokens(document.getElementById(group.dataset.for));[...group.children].forEach(b=>{b.classList.toggle('on',list.includes(b.textContent));b.setAttribute('aria-pressed',list.includes(b.textContent))})})}
+      // 尺寸單位：換掉原本的單位，放在「寬 × 高」數字後面
+      const UNIT_RE=/\s*(px|mm|cm|公分|毫米|像素)(?![A-Za-z])/gi, DIM_RE=/(\d+(?:\.\d+)?\s*[×xX*＊]\s*(?:高\s*)?\d+(?:\.\d+)?)/;
+      const unitOf=v=>{const m=v.match(/(px|mm|cm)(?![A-Za-z])/i);return m?m[1].toLowerCase():''};
+      function setUnit(input,unit){let v=input.value;if(unitOf(v)===unit){input.value=v.replace(UNIT_RE,'').trim()}else{v=v.replace(UNIT_RE,'').trim();if(!v){input.value=`寬  × 高  ${unit}`;input.focus();input.setSelectionRange(2,2)}else input.value=DIM_RE.test(v)?v.replace(DIM_RE,`$1 ${unit}`):`${v} ${unit}`}input.dispatchEvent(new Event('input',{bubbles:true}))}
+      form.addEventListener('click',e=>{const chip=e.target.closest('.chips button');if(!chip)return;if(chip.parentElement.dataset.unitFor){setUnit(document.getElementById(chip.parentElement.dataset.unitFor),chip.textContent);return}const input=document.getElementById(chip.parentElement.dataset.for);const list=tokens(input);const i=list.indexOf(chip.textContent);if(i<0)list.push(chip.textContent);else list.splice(i,1);input.value=list.join('、');input.dispatchEvent(new Event('input',{bubbles:true}))});
+      function syncChips(){form.querySelectorAll('.chips[data-unit-for]').forEach(group=>{const u=unitOf(document.getElementById(group.dataset.unitFor).value);[...group.children].forEach(b=>{b.classList.toggle('on',b.textContent===u);b.setAttribute('aria-pressed',b.textContent===u)})});form.querySelectorAll('.chips[data-for]').forEach(group=>{const list=tokens(document.getElementById(group.dataset.for));[...group.children].forEach(b=>{b.classList.toggle('on',list.includes(b.textContent));b.setAttribute('aria-pressed',list.includes(b.textContent))})})}
       window.getCommissionExportData=()=>{render();return {text:active.text,data:active.data,cards:[...container.children]}};
       window.commissionCharacters={
         setCount(n){n=Math.max(1,n|0);while(container.children.length<n)addCharacter();while(container.children.length>n)container.lastElementChild.querySelector('.remove').click()},
