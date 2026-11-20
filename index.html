@@ -86,7 +86,9 @@
     .lib-item{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}
     .lib-thumb{width:64px;height:64px;border-radius:10px;background:#eef1f4;object-fit:cover;display:grid;place-items:center;color:#9aa6b2;font-weight:800;font-size:1.3rem}
     .lib-info{min-width:0}.lib-info strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lib-info span{display:block;color:var(--sub);font-size:.8rem;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .lib-acts{display:flex;flex-direction:column;gap:6px}.lib-acts .big{min-height:40px;padding:8px 16px}.lib-acts .text-btn{text-align:center;padding:2px 0}
+    .lib-acts{display:flex;flex-direction:column;gap:6px;align-items:stretch}.lib-acts .big{min-height:40px;padding:8px 16px}.lib-acts .mini{display:flex;justify-content:center;gap:12px}.lib-acts .text-btn{text-align:center;padding:2px 0;font-size:.84rem}
+    .lib-empty{line-height:1.5;font-size:.86rem}.lib-empty .text-btn{padding:0;font-size:.86rem}.lib-bar.empty{background:#fafbfc;border-style:dashed}
+    .lib-tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}.lib-tools .ghost{min-height:44px}
     .result-foot{padding:14px 20px calc(16px + env(safe-area-inset-bottom))}.result-foot p{margin:0 0 12px;color:var(--sub);font-size:.88rem;line-height:1.5}.result-actions{display:flex;gap:10px}.result-actions button{flex:1}.result-actions .ghost{min-height:48px}
     @media(max-width:620px){
       .top{padding:16px 16px 4px}.author{font-size:.78rem}.steps{padding:0 16px}.steps button span.label{display:none}.steps button{padding-top:4px}
@@ -119,7 +121,7 @@
 
       <section class="step" data-step="2" data-title="角色" hidden>
         <div class="step-head"><span class="step-no">STEP 2 / 5</span><h1>畫面裡有誰？</h1><p>每位角色一張卡片，可以附上設定圖。</p></div>
-        <div class="lib-bar" id="libraryBar" hidden><span>角色庫裡有 <b id="libraryCount">0</b> 位角色</span><button type="button" class="ghost" id="openLibrary">從角色庫帶入</button></div>
+        <div class="lib-bar" id="libraryBar"><span id="libraryHas" hidden>角色庫裡有 <b id="libraryCount">0</b> 位角色</span><span id="libraryEmpty" class="lib-empty">常用角色可以按卡片上的「存到角色庫」。換了新裝置？<button type="button" class="text-btn" id="importLibraryEmpty">匯入角色檔</button></span><button type="button" class="ghost" id="openLibrary" hidden>從角色庫帶入</button><input type="file" id="libraryFile" accept="application/json,.json" multiple hidden></div>
         <div id="characters"></div>
         <button class="add" id="addCharacter" type="button">＋ 新增一位角色</button>
       </section>
@@ -210,7 +212,7 @@
   <dialog class="result" id="libraryDialog" aria-labelledby="libraryTitle"><div class="result-shell">
     <div class="result-head"><h2 id="libraryTitle">角色庫</h2><button type="button" id="closeLibrary" aria-label="關閉">×</button></div>
     <div class="lib-list" id="libraryList"></div>
-    <div class="result-foot"><p>點「帶入」會加入這次的委託（含設定圖）。角色庫只存在這台裝置，清除草稿不會刪掉它；要更新角色，在角色卡片上再按一次「存到角色庫」。</p></div>
+    <div class="result-foot"><div class="lib-tools"><button type="button" class="ghost" id="exportLibrary">匯出全部角色</button><button type="button" class="ghost" id="importLibrary">匯入角色檔</button></div><p>點「帶入」會加入這次的委託（含設定圖）。換裝置或分享給朋友時，用「匯出」存成角色檔，再到另一台裝置「匯入」。角色庫只存在這台裝置，清除草稿不會刪掉它；要更新角色，在角色卡片上再按一次「存到角色庫」。</p></div>
   </div></dialog>
 
   <template id="characterTemplate"><div class="character"><div class="character-head"><strong class="character-title"></strong><span class="char-tools"><button type="button" class="text-btn save-char" title="下次委託可以直接帶入這位角色（含設定圖）">存到角色庫</button><button type="button" class="text-btn duplicate" title="複製這位角色的文字設定（不含圖片）">複製</button><button type="button" class="text-btn remove">移除</button></span></div><div class="grid">
@@ -395,6 +397,6 @@ ${sourceText}
   </script>
   <script src="./export.js?v=20261118" defer></script>
   <script src="./draft.js?v=20261118" defer></script>
-  <script src="./library.js?v=20261119" defer></script>
+  <script src="./library.js?v=20261120" defer></script>
 </body>
 </html>

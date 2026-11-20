@@ -33,12 +33,13 @@
   const getAll = async () => ((await run('readonly', store => store.getAll())) || []).sort((a, b) => b.updatedAt - a.updatedAt);
 
   async function refreshBar() {
-    try {
-      const all = await getAll();
-      countEl.textContent = all.length;
-      bar.hidden = !all.length;
-      return all;
-    } catch { bar.hidden = true; return []; }
+    let all = [];
+    try { all = await getAll(); } catch { bar.hidden = true; return []; }
+    countEl.textContent = all.length;
+    $('libraryHas').hidden = !all.length; $('openLibrary').hidden = !all.length;
+    $('libraryEmpty').hidden = Boolean(all.length);
+    bar.classList.toggle('empty', !all.length);
+    return all;
   }
 
   /* ---------- 存到角色庫 ---------- */
@@ -119,20 +120,114 @@
       info.append(name, role, meta);
       const acts = document.createElement('div'); acts.className = 'lib-acts';
       const use = document.createElement('button'); use.type = 'button'; use.className = 'big';
-      use.textContent = inUse.has(record.name) ? '再帶入一次' : '帶入';
+      use.textContent = inUse.has(record.name) ? '再帶入' : '帶入';
       use.addEventListener('click', () => bringIn(record));
+      const mini = document.createElement('div'); mini.className = 'mini';
+      const out = document.createElement('button'); out.type = 'button'; out.className = 'text-btn'; out.textContent = '匯出';
+      out.addEventListener('click', () => exportRecords([record]));
       const del = document.createElement('button'); del.type = 'button'; del.className = 'text-btn remove'; del.textContent = '刪除';
       del.addEventListener('click', () => remove(record));
-      acts.append(use, del);
+      mini.append(out, del);
+      acts.append(use, mini);
       item.append(thumb, info, acts);
       return item;
     }));
   }
-  $('openLibrary').addEventListener('click', async () => {
+  async function openDialog() {
     const all = await refreshBar();
     if (!all.length) { toast('角色庫還是空的。在角色卡片上按「存到角色庫」就能存起來。'); return; }
     render(all);
-    dialog.showModal();
+    if (!dialog.open) dialog.showModal();
+  }
+  $('openLibrary').addEventListener('click', openDialog);
+
+  /* ---------- 匯出：存成角色檔（.json，含設定圖） ---------- */
+  const toDataURL = blob => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result); reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+  const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`; };
+  const safe = text => text.replace(/[\\/:*?"<>|\s]+/g, '');
+  async function exportRecords(records) {
+    if (!records.length) { toast('角色庫還是空的。'); return; }
+    try {
+      const data = {
+        app: 'commission-brief-characters', version: 1, exportedAt: new Date().toISOString(),
+        characters: await Promise.all(records.map(async record => ({
+          name: record.name, values: record.values, updatedAt: record.updatedAt,
+          images: await Promise.all((record.images || []).filter(x => x?.blob instanceof Blob).map(async x => ({
+            name: x.name, type: x.type, lastModified: x.lastModified, data: await toDataURL(x.blob),
+          }))),
+        }))),
+      };
+      const name = records.length === 1 ? `角色-${safe(records[0].name) || '未命名'}.json` : `角色庫-${records.length}位-${stamp()}.json`;
+      const result = await window.commissionDeliver([new File([JSON.stringify(data)], name, { type: 'application/json' })]);
+      if (result !== 'cancelled') toast(records.length === 1 ? `已匯出「${records[0].name}」的角色檔` : `已匯出 ${records.length} 位角色`);
+    } catch { toast('匯出失敗，請再試一次。'); }
+  }
+  $('exportLibrary').addEventListener('click', async () => exportRecords(await getAll().catch(() => [])));
+
+  /* ---------- 匯入：角色檔，或本工具的委託備份檔 ---------- */
+  const fileInput = $('libraryFile');
+  $('importLibrary').addEventListener('click', () => fileInput.click());
+  $('importLibraryEmpty').addEventListener('click', () => fileInput.click());
+  const fromDataURL = async (url, item) => {
+    if (typeof url !== 'string' || !url.startsWith('data:image/')) return null;
+    const blob = await (await fetch(url)).blob();
+    return { name: item.name || '設定圖.png', type: item.type || blob.type, lastModified: item.lastModified || Date.now(), blob };
+  };
+  async function recordsFrom(data) {
+    const list = [];
+    if (data?.app === 'commission-brief-characters' && Array.isArray(data.characters)) {
+      for (const c of data.characters) list.push({ name: c?.name, values: c?.values, updatedAt: c?.updatedAt, images: c?.images });
+    } else if (data?.app === 'commission-brief' && Array.isArray(data.text?.characters)) {
+      // 委託備份檔：把裡面有名字的角色取出來
+      data.text.characters.forEach((values, i) => list.push({ name: values?.name, values, images: data.images?.characters?.[i] }));
+    } else return null;
+    const out = [];
+    for (const c of list) {
+      const name = typeof c.name === 'string' ? c.name.trim() : '';
+      if (!name || !c.values || typeof c.values !== 'object') continue;
+      const values = Object.fromEntries(Object.entries(c.values).filter(([, v]) => typeof v === 'string'));
+      const pics = (await Promise.all((Array.isArray(c.images) ? c.images : []).map(item => fromDataURL(item?.data, item || {}).catch(() => null)))).filter(Boolean);
+      out.push({ name, values: { ...values, name }, images: pics, updatedAt: Number(c.updatedAt) || Date.now() });
+    }
+    return out;
+  }
+  fileInput.addEventListener('change', async () => {
+    const files = [...fileInput.files]; fileInput.value = '';
+    if (!files.length) return;
+    let incoming = [], bad = 0;
+    for (const file of files) {
+      try {
+        const records = await recordsFrom(JSON.parse(await file.text()));
+        if (records) incoming.push(...records); else bad++;
+      } catch { bad++; }
+    }
+    if (!incoming.length) { toast(bad ? '這不是本工具的角色檔或備份檔。' : '檔案裡沒有可以匯入的角色（角色需要有名字）。'); return; }
+    try {
+      const all = await getAll();
+      const byName = new Map(all.map(item => [item.name, item]));
+      const dupes = incoming.filter(item => byName.has(item.name));
+      let replace = true;
+      if (dupes.length) replace = confirm(`角色庫裡已經有：${dupes.map(d => `「${d.name}」`).join('、')}。\n\n要用匯入的內容取代嗎？\n（按「取消」會保留原本的，只加入新角色）`);
+      let added = 0, updated = 0;
+      await run('readwrite', store => {
+        for (const item of incoming) {
+          const existing = byName.get(item.name);
+          if (existing && !replace) continue;
+          store.put({ ...item, id: existing?.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, updatedAt: Date.now() });
+          existing ? updated++ : added++;
+        }
+      });
+      await refreshBar();
+      const parts = [added && `新增 ${added} 位`, updated && `更新 ${updated} 位`].filter(Boolean);
+      toast(parts.length ? `已匯入角色：${parts.join('、')}` : '沒有新的角色，角色庫維持原樣。');
+      if (parts.length) openDialog();
+    } catch (error) {
+      toast(error?.name === 'QuotaExceededError' ? '裝置儲存空間不足，無法匯入全部角色。' : '匯入失敗，請再試一次。');
+    }
   });
   $('closeLibrary').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
